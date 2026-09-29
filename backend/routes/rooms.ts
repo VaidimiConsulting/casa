@@ -1,0 +1,21 @@
+import { Router } from "express";
+import {
+  getRooms,
+  getRoomById,
+  createRoom,
+  updateRoom,
+  bulkPriceAdjust,
+  deleteRoom,
+} from "../controllers/roomController.js";
+import { authenticate, requireAdmin } from "../middleware/auth.js";
+
+const router = Router();
+
+router.get("/", getRooms);
+router.get("/:id", getRoomById);
+router.post("/bulk-price-adjust", authenticate, requireAdmin, bulkPriceAdjust);
+router.post("/", authenticate, requireAdmin, createRoom);
+router.put("/:id", authenticate, requireAdmin, updateRoom);
+router.delete("/:id", authenticate, requireAdmin, deleteRoom);
+
+export default router;
