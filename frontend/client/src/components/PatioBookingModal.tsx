@@ -100,8 +100,8 @@ export default function PatioBookingModal({
       return;
     }
 
-    if (guestCount < 10 || guestCount > 40) {
-      toast.error("Open Patio capacity is between 10 to 40 guests.");
+    if (guestCount < 12 || guestCount > 18) {
+      toast.error("Open Patio capacity is between 12 to 18 guests.");
       return;
     }
 
@@ -158,7 +158,7 @@ export default function PatioBookingModal({
                 Book Open Patio & Terrace Garden
               </h3>
               <span className="text-[11px] text-[#fbf8f1]/70 block font-sans">
-                Intimate Celebrations for 30–40 Members
+                Intimate Celebrations for 12–18 Members
               </span>
             </div>
           </div>
@@ -286,20 +286,20 @@ export default function PatioBookingModal({
 
               <div>
                 <label className="block text-[10px] uppercase font-mono tracking-wider font-bold text-[#77766c] mb-1">
-                  Guests (Capacity: 30–40) *
+                  Guests (Capacity: 12–18) *
                 </label>
                 <div className="flex items-center gap-2">
                   <input
                     type="number"
-                    min={10}
-                    max={40}
+                    min={12}
+                    max={18}
                     required
                     value={guestCount}
-                    onChange={(e) => setGuestCount(Math.min(40, Math.max(10, Number(e.target.value))))}
+                    onChange={(e) => setGuestCount(Math.min(18, Math.max(12, Number(e.target.value))))}
                     className="w-full bg-white border border-[#20352b]/15 rounded-xl px-3 py-2 text-xs text-[#20352b] font-semibold focus:outline-none focus:border-[#20352b]"
                   />
                   <span className="text-[11px] text-[#77766c] font-mono whitespace-nowrap">
-                    / 40 max
+                    / 18 max
                   </span>
                 </div>
               </div>
@@ -335,7 +335,7 @@ export default function PatioBookingModal({
                   <Utensils size={15} className="text-[#c8a36a]" />
                   <div>
                     <span className="font-semibold text-xs text-[#20352b] block">
-                      Food & Catering Service Available
+                      Breakfast & Snacks Service Available
                     </span>
                     <span className="text-[11px] text-[#77766c]">
                       Fresh in-house food prepared by our chef for your celebration
@@ -360,9 +360,9 @@ export default function PatioBookingModal({
                     {foodRequired && <CheckCircle2 size={12} />}
                   </div>
                   <div>
-                    <strong className="text-xs block">Yes, Food & Catering Required</strong>
+                    <strong className="text-xs block">Yes, Breakfast & Snacks Required</strong>
                     <span className="text-[10px] opacity-80 block leading-tight mt-0.5">
-                      Banarasi thali, party snacks, multi-course buffet, or high-tea
+                      Only breakfast and snacks are provided (no main meals)
                     </span>
                   </div>
                 </div>
@@ -397,7 +397,7 @@ export default function PatioBookingModal({
                   </label>
                   <input
                     type="text"
-                    placeholder="e.g. Pure Veg Banarasi feast, Evening tea & snacks, Desserts..."
+                    placeholder="e.g. Evening tea & snacks, Desserts..."
                     value={foodPreferences}
                     onChange={(e) => setFoodPreferences(e.target.value)}
                     className="w-full bg-[#fbf8f1] border border-[#20352b]/15 rounded-xl px-3 py-2 text-xs text-[#20352b] focus:outline-none focus:border-[#20352b]"

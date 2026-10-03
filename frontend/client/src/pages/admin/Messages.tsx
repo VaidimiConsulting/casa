@@ -1,9 +1,10 @@
 import React, { useEffect, useState } from "react";
-import { Eye, Mail, Trash2, Send, Phone, CheckCircle2 } from "lucide-react";
+import { Eye, Mail, Trash2, Send, Phone, CheckCircle2, Printer } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
 import Modal from "@/components/admin/Modal";
+import EnquirySlipModal from "@/components/EnquirySlipModal";
 import {
   getContactMessages,
   updateContactStatus,
@@ -17,6 +18,8 @@ export default function Messages() {
   const [loading, setLoading] = useState(true);
   const [selectedMessage, setSelectedMessage] = useState<ContactMessage | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [selectedInvoiceEnquiry, setSelectedInvoiceEnquiry] = useState<ContactMessage | null>(null);
   const [replyText, setReplyText] = useState("");
 
   useEffect(() => {
@@ -250,6 +253,11 @@ export default function Messages() {
           </div>
         )}
       </Modal>
+      <EnquirySlipModal
+        enquiry={selectedInvoiceEnquiry}
+        isOpen={isInvoiceModalOpen}
+        onClose={() => setIsInvoiceModalOpen(false)}
+      />
     </AdminLayout>
   );
 }

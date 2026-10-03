@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import ReceptionLayout from "@/components/reception/ReceptionLayout";
 import Modal from "@/components/admin/Modal";
-import { Search, RefreshCw, Plus, CalendarDays, BedDouble, UserCheck, IndianRupee } from "lucide-react";
+import BookingInvoiceModal from "@/components/BookingInvoiceModal";
+import { Search, RefreshCw, Plus, CalendarDays, BedDouble, UserCheck, IndianRupee, Receipt, Printer } from "lucide-react";
 import api from "@/api/axios";
 import { toast } from "sonner";
 
@@ -36,6 +37,7 @@ export default function ReceptionBookings() {
   const [search, setSearch] = useState("");
   const [statusFilter, setStatusFilter] = useState("all");
   const [updating, setUpdating] = useState<number | null>(null);
+  const [selectedInvoiceBooking, setSelectedInvoiceBooking] = useState<any | null>(null);
 
   // New Walk-in Modal State
   const [isModalOpen, setIsModalOpen] = useState(false);
@@ -261,17 +263,27 @@ export default function ReceptionBookings() {
                         </span>
                       </td>
                       <td className="px-5 py-4 text-right">
-                        <select
-                          value={b.status}
-                          onChange={(e) => updateStatus(b.id, e.target.value)}
-                          disabled={updating === b.id}
-                          className="text-xs border border-[#20352b]/15 rounded-xl px-2.5 py-1.5 bg-[#f5f0e8] text-[#20352b] focus:outline-none disabled:opacity-50"
-                        >
-                          <option value="confirmed">Confirmed</option>
-                          <option value="pending">Pending</option>
-                          <option value="completed">Completed</option>
-                          <option value="cancelled">Cancelled</option>
-                        </select>
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setSelectedInvoiceBooking(b)}
+                            className="p-1.5 rounded-lg text-[#c8a36a] hover:bg-[#c8a36a]/15 transition-colors inline-flex items-center gap-1 border border-[#c8a36a]/30"
+                            title="Print & Download Booking Slip (PDF)"
+                          >
+                            <Receipt size={13} />
+                            <span className="text-[10px] font-bold">Voucher</span>
+                          </button>
+                          <select
+                            value={b.status}
+                            onChange={(e) => updateStatus(b.id, e.target.value)}
+                            disabled={updating === b.id}
+                            className="text-xs border border-[#20352b]/15 rounded-xl px-2.5 py-1.5 bg-[#f5f0e8] text-[#20352b] focus:outline-none disabled:opacity-50"
+                          >
+                            <option value="confirmed">Confirmed</option>
+                            <option value="pending">Pending</option>
+                            <option value="completed">Completed</option>
+                            <option value="cancelled">Cancelled</option>
+                          </select>
+                        </div>
                       </td>
                     </tr>
                   ))}
@@ -402,6 +414,12 @@ export default function ReceptionBookings() {
           </div>
         </form>
       </Modal>
+
+      <BookingInvoiceModal
+        booking={selectedInvoiceBooking}
+        isOpen={!!selectedInvoiceBooking}
+        onClose={() => setSelectedInvoiceBooking(null)}
+      />
     </ReceptionLayout>
   );
 }

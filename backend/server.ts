@@ -10,8 +10,6 @@ import bookingRoutes from "./routes/bookings.js";
 import contactRoutes from "./routes/contact.js";
 import paymentRoutes from "./routes/payments.js";
 import adminRoutes from "./routes/admin.js";
-import menuRoutes from "./routes/menu.js";
-import orderRoutes from "./routes/orders.js";
 import customerRoutes from "./routes/customers.js";
 import reviewRoutes from "./routes/reviews.js";
 import couponRoutes from "./routes/coupons.js";
@@ -21,12 +19,12 @@ import serviceRoutes from "./routes/services.js";
 import uploadRoutes from "./routes/upload.js";
 import galleryRoutes from "./routes/gallery.js";
 import patioRoutes from "./routes/patio.js";
-import libraryRoutes from "./routes/library.js";
+import financeRoutes from "./routes/finance.js";
 import { initGalleryTable } from "./controllers/galleryController.js";
 import { initPatioTable } from "./controllers/patioController.js";
-import { initLibraryTables } from "./controllers/libraryController.js";
 import { initRoomsTable } from "./controllers/roomController.js";
 import { initPaymentsTable } from "./controllers/paymentController.js";
+import { initFinanceTable } from "./controllers/financeController.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -78,9 +76,7 @@ app.use("/api/settings", settingsRoutes);
 app.use("/api/upload", uploadRoutes);
 app.use("/api/gallery", galleryRoutes);
 app.use("/api/patio", patioRoutes);
-app.use("/api/library", libraryRoutes);
-app.use("/api/menu", menuRoutes);
-app.use("/api/orders", orderRoutes);
+app.use("/api/finance", financeRoutes);
 
 
 // Health check
@@ -113,9 +109,9 @@ async function startServer() {
     await testConnection();
     await initRoomsTable();
     await initPaymentsTable();
+    await initFinanceTable();
     await initGalleryTable();
     await initPatioTable();
-    await initLibraryTables();
 
     app.listen(PORT, () => {
       console.log(`🏡 Casa Nest API running at http://localhost:${PORT}`);

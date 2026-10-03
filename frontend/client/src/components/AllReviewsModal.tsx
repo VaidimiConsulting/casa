@@ -29,44 +29,7 @@ export default function AllReviewsModal({
   const [selectedRating, setSelectedRating] = useState<string>("All");
   const [searchQuery, setSearchQuery] = useState("");
 
-  const fallbackReviews: Review[] = useMemo(() => [
-    {
-      id: 1,
-      user_id: null,
-      room_id: null,
-      customer_name: "Riya Sharma",
-      customer_email: "riya.sharma@example.com",
-      rating: 5,
-      review: "Felt like home from the very first moment. Beautiful ambience, clean rooms with swan origami, and amazing hospitality in Varanasi!",
-      room_name: "Room 101 — Casa Luz (House of Light)",
-      is_approved: 1,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 2,
-      user_id: null,
-      room_id: null,
-      customer_name: "Amit Verma",
-      customer_email: "amit.verma@example.com",
-      rating: 5,
-      review: "The peaceful serene vibe inside Kashi is just magical. Peaceful, extremely safe, and the open rooftop patio was wonderful.",
-      room_name: "Room 102 — Casa Sereno (Calm & Peaceful)",
-      is_approved: 1,
-      created_at: new Date().toISOString(),
-    },
-    {
-      id: 3,
-      user_id: null,
-      room_id: null,
-      customer_name: "Sneha Iyer",
-      customer_email: "sneha.iyer@example.com",
-      rating: 5,
-      review: "Perfect blend of comfort, culture, and calm. Handcrafted teak furniture and very supportive host team. Highly recommended!",
-      room_name: "Room 104 — Casa Amore (Romantic & Cozy)",
-      is_approved: 1,
-      created_at: new Date().toISOString(),
-    },
-  ], []);
+  const fallbackReviews: Review[] = useMemo(() => [], []);
 
   const allReviewsList = reviews && reviews.length > 0 ? reviews : fallbackReviews;
 
@@ -342,3 +305,4 @@ export default function AllReviewsModal({
     </div>
   );
 }
+

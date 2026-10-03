@@ -16,8 +16,7 @@
     "express": "^4.21.2",
     "jsonwebtoken": "^9.0.2",
     "multer": "^2.4.0",
-    "mysql2": "^3.11.5",
-    "razorpay": "^2.9.5"
+    "mysql2": "^3.11.5"
   },
   "devDependencies": {
     "@types/bcryptjs": "^2.4.6",

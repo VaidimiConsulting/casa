@@ -34,7 +34,7 @@ const navItems = [
   { label: "Room Status", href: "/reception/rooms", icon: BedDouble },
   { label: "Bookings", href: "/reception/bookings", icon: CalendarDays },
   { label: "Check-In / Out", href: "/reception/checkin", icon: UserCheck },
-  { label: "Homestay Library", href: "/reception/library", icon: BookOpen },
+
   { label: "Room Services & Kettle", href: "/reception/services", icon: Coffee },
   { label: "Payments & Billing", href: "/reception/payments", icon: CreditCard },
   { label: "Guest Directory", href: "/reception/guests", icon: Phone },

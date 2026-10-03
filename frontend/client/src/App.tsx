@@ -20,7 +20,6 @@ import Bookings from "./pages/admin/Bookings";
 import PatioEvents from "./pages/admin/PatioEvents";
 import Payments from "./pages/admin/Payments";
 import Gallery from "./pages/admin/Gallery";
-import Library from "./pages/admin/Library";
 import Customers from "./pages/admin/Customers";
 import Reviews from "./pages/admin/Reviews";
 import Messages from "./pages/admin/Messages";
@@ -30,6 +29,7 @@ import Reports from "./pages/admin/Reports";
 import Settings from "./pages/admin/Settings";
 import CheckIn from "./pages/admin/CheckIn";
 import Services from "./pages/admin/Services";
+import Finance from "./pages/admin/Finance";
 
 function Router() {
   return (
@@ -61,11 +61,11 @@ function Router() {
       <Route path="/admin/patio">
         {() => (<AdminGuard><PatioEvents /></AdminGuard>)}
       </Route>
-      <Route path="/admin/library">
-        {() => (<AdminGuard><Library /></AdminGuard>)}
-      </Route>
       <Route path="/admin/payments">
         {() => (<AdminGuard><Payments /></AdminGuard>)}
+      </Route>
+      <Route path="/admin/finance">
+        {() => (<AdminGuard><Finance /></AdminGuard>)}
       </Route>
       <Route path="/admin/gallery">
         {() => (<AdminGuard><Gallery /></AdminGuard>)}

@@ -66,7 +66,7 @@ export function calculatePatioPricing(timeSlot: string, foodMenuType: string, gu
       break;
   }
 
-  const validGuestCount = Math.max(10, Math.min(40, guestCount || 20));
+  const validGuestCount = Math.max(12, Math.min(18, guestCount || 12));
   const estimatedTotal = baseVenuePrice + foodRate * validGuestCount;
 
   return {
@@ -170,10 +170,10 @@ export async function createPatioBooking(req: Request, res: Response): Promise<v
 
     // 6. Validate Guest Count
     const guests = parseInt(guest_count, 10);
-    if (isNaN(guests) || guests < 10 || guests > 40) {
+    if (isNaN(guests) || guests < 12 || guests > 18) {
       res.status(400).json({
         success: false,
-        message: "Guest count for Open Patio must be between 10 and 40 guests.",
+        message: "Guest count for Open Patio must be between 12 and 18 guests.",
       });
       return;
     }

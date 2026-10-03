@@ -454,6 +454,16 @@ export default function ReceptionPayments() {
               </span>
             </div>
 
+            {/* Important Notice & Terms */}
+            <div className="p-3 rounded-xl bg-[#fef6e7] border border-[#e6b35a]/50 text-[10px] text-[#4a3512] space-y-1">
+              <p className="font-bold text-[#91560f] uppercase tracking-wider font-mono">
+                Important Notice / नियम व शर्तें:
+              </p>
+              <p>• <strong>Advance Non-Refundable:</strong> Advance booking amount cannot be refunded at any cost under any circumstances.</p>
+              <p>• <strong>Damage Liability:</strong> Any damage or breakage to homestay property/items will be charged directly to the guest.</p>
+              <p>• <strong>Photo ID Mandatory:</strong> Original Government ID is mandatory for all staying guests at check-in.</p>
+            </div>
+
             <p className="text-[10px] text-center text-[#77766c]">
               Thank you for choosing Casa Nest Homestay. Have a delightful stay!
             </p>

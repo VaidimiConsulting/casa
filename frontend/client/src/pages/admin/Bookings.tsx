@@ -484,6 +484,7 @@ export default function Bookings() {
         isOpen={Boolean(selectedInvoiceBooking)}
         onClose={() => setSelectedInvoiceBooking(null)}
       />
+      
     </AdminLayout>
   );
 }

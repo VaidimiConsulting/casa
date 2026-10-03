@@ -51,211 +51,179 @@ const DATE_REGEX = /^\d{4}-\d{2}-\d{2}$/;
 export async function createBooking(req: Request, res: Response): Promise<void> {
   try {
     const {
-      room_id,
+      room_id, // can be single id or array of ids
       guest_name,
       guest_email,
       guest_phone,
       check_in,
       check_out,
-      guests,
+      males = 0,
+      females = 0,
+      children = 0,
       notes,
     } = req.body;
 
+    const parsedMales = parseInt(males) || 0;
+    const parsedFemales = parseInt(females) || 0;
+    const parsedChildren = parseInt(children) || 0;
+    const parsedGuests = parsedMales + parsedFemales + parsedChildren;
+
     // 1. Validate Guest Name
     if (!guest_name || typeof guest_name !== "string" || guest_name.trim().length < 2) {
-      res.status(400).json({
-        success: false,
-        message: "Please enter a valid guest name (at least 2 characters).",
-      });
-      return;
-    }
-    if (guest_name.trim().length > 100) {
-      res.status(400).json({
-        success: false,
-        message: "Guest name is too long (maximum 100 characters).",
-      });
+      res.status(400).json({ success: false, message: "Please enter a valid guest name." });
       return;
     }
 
-    // 2. Validate Guest Email
-    if (!guest_email || typeof guest_email !== "string" || !EMAIL_REGEX.test(guest_email.trim())) {
-      res.status(400).json({
-        success: false,
-        message: "Please enter a valid email address (e.g., yourname@example.com).",
-      });
+    // 2. Validate Email & Phone
+    if (!guest_email || !EMAIL_REGEX.test(guest_email.trim())) {
+      res.status(400).json({ success: false, message: "Please enter a valid email." });
+      return;
+    }
+    if (guest_phone && !PHONE_REGEX.test(guest_phone.trim())) {
+      res.status(400).json({ success: false, message: "Please enter a valid phone number." });
       return;
     }
 
-    // 3. Validate Guest Phone (if provided)
-    if (guest_phone && typeof guest_phone === "string" && guest_phone.trim()) {
-      if (!PHONE_REGEX.test(guest_phone.trim())) {
-        res.status(400).json({
-          success: false,
-          message: "Please enter a valid 10-15 digit contact number.",
-        });
-        return;
-      }
-    }
-
-    // 4. Validate Check-in and Check-out Date Formats
-    if (!check_in || !check_out || typeof check_in !== "string" || typeof check_out !== "string") {
-      res.status(400).json({
-        success: false,
-        message: "Both check-in and check-out dates are required (format YYYY-MM-DD).",
-      });
+    // 3. Validate Dates
+    if (!check_in || !check_out || !DATE_REGEX.test(check_in) || !DATE_REGEX.test(check_out)) {
+      res.status(400).json({ success: false, message: "Valid check-in and check-out dates are required." });
       return;
     }
-
-    if (!DATE_REGEX.test(check_in) || !DATE_REGEX.test(check_out)) {
-      res.status(400).json({
-        success: false,
-        message: "Dates must be in valid YYYY-MM-DD format.",
-      });
-      return;
-    }
-
     const checkInDate = new Date(`${check_in}T00:00:00`);
     const checkOutDate = new Date(`${check_out}T00:00:00`);
-
-    if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
-      res.status(400).json({
-        success: false,
-        message: "Invalid calendar date provided.",
-      });
-      return;
-    }
-
-    // Validate Check-in is not in the past
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     if (checkInDate < today) {
-      res.status(400).json({
-        success: false,
-        message: "Check-in date cannot be in the past.",
-      });
+      res.status(400).json({ success: false, message: "Check-in date cannot be in the past." });
       return;
     }
-
-    // Validate Check-out is strictly after Check-in
     if (checkOutDate <= checkInDate) {
-      res.status(400).json({
-        success: false,
-        message: "Check-out date must be at least 1 day after check-in.",
-      });
+      res.status(400).json({ success: false, message: "Check-out must be after check-in." });
       return;
     }
-
-    // Validate Maximum Stay Duration (90 Days)
     const nights = Math.ceil((checkOutDate.getTime() - checkInDate.getTime()) / (1000 * 60 * 60 * 24));
-    if (nights > 90) {
-      res.status(400).json({
-        success: false,
-        message: "Maximum single reservation duration is 90 nights. For longer stays, please contact front desk.",
-      });
+    
+    // 4. Validate Guest Counts
+    if (parsedGuests < 1) {
+      res.status(400).json({ success: false, message: "At least 1 guest is required." });
+      return;
+    }
+    if (parsedChildren > 2) {
+      res.status(400).json({ success: false, message: "Maximum 2 children (0-15 years) are allowed per booking." });
       return;
     }
 
-    // 5. Validate Guests Count
-    const parsedGuests = parseInt(guests) || 1;
-    if (parsedGuests < 1 || parsedGuests > 10) {
-      res.status(400).json({
-        success: false,
-        message: "Guest count must be between 1 and 10.",
-      });
+    // 5. Handle Multiple Rooms
+    let roomIds: number[] = [];
+    if (Array.isArray(room_id)) {
+      roomIds = room_id;
+    } else if (room_id) {
+      roomIds = [room_id];
+    }
+    
+    if (roomIds.length === 0) {
+      res.status(400).json({ success: false, message: "Please select at least one room." });
       return;
     }
 
-    // 6. Calculate total amount & check room conflicts
-    let total_amount = 0;
-    let roomRecord: any = null;
-
-    if (room_id) {
-      const [roomRows] = await pool.query(
-        "SELECT id, name, price_per_night, capacity, status FROM rooms WHERE id = ?",
-        [room_id]
-      );
-      const roomsList = roomRows as any[];
-      if (roomsList.length === 0) {
-        res.status(404).json({
-          success: false,
-          message: "The selected room was not found.",
-        });
-        return;
-      }
-
-      roomRecord = roomsList[0];
-      if (roomRecord.status === "unavailable") {
-        res.status(400).json({
-          success: false,
-          message: "This room is currently undergoing maintenance. Please select another room.",
-        });
-        return;
-      }
-
-      // Check for overlapping active bookings for this room
-      const [conflicts] = await pool.query(
-        `SELECT id, check_in, check_out FROM bookings 
-         WHERE room_id = ? 
-           AND status IN ('pending', 'confirmed') 
-           AND NOT (check_out <= ? OR check_in >= ?)`,
-        [room_id, check_in, check_out]
-      );
-      if ((conflicts as any[]).length > 0) {
-        res.status(409).json({
-          success: false,
-          message: "This room is already reserved for the selected dates. Please choose different dates or select another room.",
-        });
-        return;
-      }
-
-      total_amount = Number(roomRecord.price_per_night) * nights;
-    }
-
-    // Get user_id from JWT if authenticated
-    const user_id = req.user?.id || null;
-
-    const [result] = await pool.query(
-      `INSERT INTO bookings (user_id, room_id, guest_name, guest_email, guest_phone, check_in, check_out, guests, total_amount, notes)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-      [
-        user_id,
-        room_id || null,
-        guest_name.trim(),
-        guest_email.toLowerCase().trim(),
-        guest_phone?.trim() || null,
-        check_in,
-        check_out,
-        parsedGuests,
-        total_amount,
-        notes?.trim() || null,
-      ]
+    // Fetch room details
+    const [roomRows] = await pool.query(
+      "SELECT id, name, price_per_night, capacity, status FROM rooms WHERE id IN (?)",
+      [roomIds]
     );
+    const roomsList = roomRows as any[];
+    if (roomsList.length !== roomIds.length) {
+      res.status(404).json({ success: false, message: "One or more selected rooms were not found." });
+      return;
+    }
 
-    const bookingId = (result as { insertId: number }).insertId;
+    // Validate capacities and status
+    let total_capacity = 0;
+    for (const room of roomsList) {
+      if (room.status === "unavailable") {
+        res.status(400).json({ success: false, message: `Room ${room.name} is currently unavailable.` });
+        return;
+      }
+      total_capacity += room.capacity;
+    }
+    
+    // Check if total guests exceed total capacity of selected rooms (excluding children under 15 if needed, but let's strictly enforce)
+    // Actually the requirement is strict limits per room, so we check total guests <= total capacity
+    if (parsedMales + parsedFemales > total_capacity) {
+      res.status(400).json({ success: false, message: `Total adults (${parsedMales + parsedFemales}) exceed the total capacity (${total_capacity}) of the selected rooms.` });
+      return;
+    }
 
-    // Create notification for admin dashboard
+    // Check for overlapping bookings
+    const [conflicts] = await pool.query(
+      `SELECT id, room_id FROM bookings 
+       WHERE room_id IN (?) 
+         AND (status = 'confirmed' OR payment_status = 'paid') 
+         AND NOT (check_out <= ? OR check_in >= ?)`,
+      [roomIds, check_in, check_out]
+    );
+    if ((conflicts as any[]).length > 0) {
+      res.status(409).json({ success: false, message: "One or more selected rooms are already booked for these dates." });
+      return;
+    }
+
+    const user_id = req.user?.id || null;
+    const groupId = `GRP-${Date.now()}`;
+    let grandTotal = 0;
+    let firstBookingId = null;
+
+    // Create bookings for each room
+    for (const room of roomsList) {
+      const roomTotal = Number(room.price_per_night) * nights;
+      grandTotal += roomTotal;
+      
+      const [result] = await pool.query(
+        `INSERT INTO bookings (user_id, room_id, guest_name, guest_email, guest_phone, check_in, check_out, guests, males, females, children, group_id, total_amount, notes)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        [
+          user_id,
+          room.id,
+          guest_name.trim(),
+          guest_email.toLowerCase().trim(),
+          guest_phone?.trim() || null,
+          check_in,
+          check_out,
+          parsedGuests,
+          parsedMales,
+          parsedFemales,
+          parsedChildren,
+          groupId,
+          roomTotal,
+          notes?.trim() || null,
+        ]
+      );
+      
+      const bId = (result as { insertId: number }).insertId;
+      if (!firstBookingId) firstBookingId = bId;
+    }
+
+    // Create notification
     await pool.query(
-      `INSERT INTO notifications (type, title, message, link) 
-       VALUES ('booking', ?, ?, ?)`,
+      `INSERT INTO notifications (type, title, message, link) VALUES ('booking', ?, ?, ?)`,
       [
         `New Reservation: ${guest_name.trim()}`,
-        `Booking #${bookingId} received for ${roomRecord?.name || "Room"} (${check_in} to ${check_out})`,
+        `Booking for ${roomIds.length} room(s) received (${check_in} to ${check_out})`,
         "/admin/bookings",
       ]
     );
 
     res.status(201).json({
       success: true,
-      message: "Booking enquiry submitted successfully. We look forward to hosting you!",
-      bookingId,
-      total_amount,
+      message: "Booking submitted successfully!",
+      bookingId: firstBookingId,
+      total_amount: grandTotal,
+      group_id: groupId
     });
   } catch (error) {
     console.error("Create booking error:", error);
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 }
-
 
 // GET /api/bookings  (admin gets all, user gets own)
 export async function getBookings(req: Request, res: Response): Promise<void> {

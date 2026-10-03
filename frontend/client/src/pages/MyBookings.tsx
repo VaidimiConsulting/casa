@@ -37,9 +37,7 @@ import {
 import { getCurrentUser, logout, updateProfile, getProfile, AuthUser } from "@/api/auth";
 import { getBookings, cancelBooking, createBooking, fetchRoomBookedDates, Booking } from "@/api/bookings";
 import { fetchRooms, Room } from "@/api/rooms";
-import { fetchMyLoans, LibraryLoan } from "@/api/library";
 import BookingInvoiceModal from "@/components/BookingInvoiceModal";
-import BookingPaymentModal from "@/components/BookingPaymentModal";
 import WriteReviewModal from "@/components/WriteReviewModal";
 import { toast } from "sonner";
 
@@ -54,9 +52,6 @@ export default function MyBookings() {
   const [filter, setFilter] = useState<"all" | "active" | "completed">("all");
   const [cancellingId, setCancellingId] = useState<number | null>(null);
 
-  // Library Loans State
-  const [myLoans, setMyLoans] = useState<LibraryLoan[]>([]);
-  const [loansLoading, setLoansLoading] = useState(false);
   const [isReviewModalOpen, setIsReviewModalOpen] = useState(false);
 
   // Selected booking for invoice modal and payment modal
@@ -80,6 +75,7 @@ export default function MyBookings() {
   const [bookingSubmitting, setBookingSubmitting] = useState(false);
   const [bookingSuccess, setBookingSuccess] = useState(false);
   const [datesConflict, setDatesConflict] = useState(false);
+  const [newlyCreatedBooking, setNewlyCreatedBooking] = useState<Booking | null>(null);
 
   useEffect(() => {
     const currentUser = getCurrentUser();
@@ -94,20 +90,7 @@ export default function MyBookings() {
     loadMyBookings();
     refreshProfile();
     loadRooms();
-    loadMyLoans();
   }, []);
-
-  const loadMyLoans = async () => {
-    try {
-      setLoansLoading(true);
-      const data = await fetchMyLoans();
-      setMyLoans(data);
-    } catch (error) {
-      console.error("Error loading user library loans:", error);
-    } finally {
-      setLoansLoading(false);
-    }
-  };
 
   const refreshProfile = async () => {
     try {
@@ -207,17 +190,47 @@ export default function MyBookings() {
     try {
       setBookingSubmitting(true);
       const selectedRoom = rooms.find((r) => r.id === selectedRoomId);
-      await createBooking({
+      const res = await createBooking({
         room_id: selectedRoomId,
         guest_name: user.name || "Guest",
         guest_email: user.email,
+        guest_phone: user.phone || undefined,
         check_in: bookCheckIn,
         check_out: bookCheckOut,
         guests: bookGuests,
         notes: selectedRoom ? `Room preference: ${selectedRoom.name}` : undefined,
       });
+
+      const nights = Math.max(
+        1,
+        Math.ceil((new Date(bookCheckOut).getTime() - new Date(bookCheckIn).getTime()) / (1000 * 60 * 60 * 24))
+      );
+      const pricePerNight = Number(selectedRoom?.price_per_night || 3500);
+
+      const freshBooking: Booking = {
+        id: res.bookingId,
+        user_id: user.id,
+        room_id: selectedRoomId,
+        guest_name: user.name || "Guest",
+        guest_email: user.email,
+        guest_phone: user.phone || undefined,
+        check_in: bookCheckIn,
+        check_out: bookCheckOut,
+        guests: bookGuests,
+        total_amount: res.total_amount || (pricePerNight * nights),
+        status: "pending",
+        payment_status: "pending",
+        created_at: new Date().toISOString(),
+        room_name: selectedRoom?.name || "Casa Nest Room",
+        room_type: selectedRoom?.room_type || "Deluxe Room",
+        price_per_night: pricePerNight,
+        payment_method: "Pay at Front Desk (Cash / UPI)",
+      };
+
+      setNewlyCreatedBooking(freshBooking);
+      setSelectedInvoiceBooking(freshBooking);
       setBookingSuccess(true);
-      toast.success("Booking enquiry submitted successfully! Check My Reservations.");
+      toast.success("Stay booked successfully! Voucher generated.");
       loadMyBookings();
     } catch (err: any) {
       if (err.response?.status === 409) {
@@ -438,20 +451,6 @@ export default function MyBookings() {
             >
               <PlusCircle size={14} />
               <span>Book a Stay</span>
-            </button>
-            <button
-              onClick={() => {
-                setActiveTab("library");
-                loadMyLoans();
-              }}
-              className={`px-4 py-2 rounded-2xl text-xs font-semibold transition-all cursor-pointer flex items-center gap-1.5 ${
-                activeTab === "library"
-                  ? "bg-[#20352b] text-[#fbf8f1] shadow-xs"
-                  : "bg-[#fbf8f1] border border-[#20352b]/15 text-[#20352b] hover:bg-[#efe7db]"
-              }`}
-            >
-              <BookOpen size={14} className="text-[#c8a36a]" />
-              <span>Library & Books {myLoans.filter(l => l.status === 'active').length > 0 && `(${myLoans.filter(l => l.status === 'active').length})`}</span>
             </button>
             <button
               onClick={() => setActiveTab("profile")}
@@ -742,17 +741,6 @@ export default function MyBookings() {
 
                       {/* Right: Actions Column */}
                       <div className="xl:w-64 xl:border-l xl:border-[#20352b]/10 xl:pl-6 space-y-3 shrink-0">
-                        {/* Pay Online Button if Unpaid */}
-                        {!isPaid && booking.status !== "cancelled" && (
-                          <button
-                            onClick={() => setPaymentModalBooking(booking)}
-                            className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-full bg-gradient-to-r from-[#c8a36a] to-[#d8b57b] text-[#20352b] text-xs font-bold hover:brightness-105 transition-all cursor-pointer shadow-sm"
-                          >
-                            <CreditCard size={14} />
-                            <span>Pay with Razorpay / UPI</span>
-                          </button>
-                        )}
-
                         {/* Printable Voucher & Slip Button */}
                         <button
                           onClick={() => setSelectedInvoiceBooking(booking)}
@@ -801,15 +789,51 @@ export default function MyBookings() {
         {activeTab === "book" && (
           <div className="max-w-2xl mx-auto space-y-6">
             {bookingSuccess ? (
-              <div className="bg-white border border-[#20352b]/15 rounded-3xl p-10 sm:p-14 text-center space-y-5 shadow-sm">
+              <div className="bg-white border border-[#20352b]/15 rounded-3xl p-8 sm:p-12 text-center space-y-5 shadow-sm">
                 <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-700 flex items-center justify-center mx-auto shadow-inner">
                   <CheckCircle2 size={36} />
                 </div>
-                <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1a2f23]">Booking Enquiry Submitted!</h3>
-                <p className="text-xs sm:text-sm text-[#4d544a] max-w-md mx-auto leading-relaxed">
-                  Aapki reservation request successfully register ho gayi hai. Admin confirm karne ke baad aapko "My Reservations" tab me updated status dikh jayega.
-                </p>
+                <div>
+                  <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1a2f23]">
+                    Booking Reserved & Voucher Ready!
+                  </h3>
+                  <p className="text-xs sm:text-sm text-[#4d544a] max-w-md mx-auto leading-relaxed mt-1">
+                    Aapki reservation request successfully register ho gayi hai (Booking #{newlyCreatedBooking?.id}). Niche diye gaye button par click karke apna official booking slip / PDF invoice download karein.
+                  </p>
+                </div>
+
+                {newlyCreatedBooking && (
+                  <div className="p-4 bg-[#f5f0e8] rounded-2xl text-xs text-[#20352b] border border-[#20352b]/12 max-w-md mx-auto flex flex-col sm:flex-row items-center justify-between gap-3 shadow-2xs">
+                    <div className="text-center sm:text-left">
+                      <span className="text-[10px] text-[#77766c] block font-mono uppercase font-semibold">
+                        Voucher #{newlyCreatedBooking.id} • {newlyCreatedBooking.room_name}
+                      </span>
+                      <span className="font-mono font-bold text-base text-[#20352b]">
+                        ₹{Number(newlyCreatedBooking.total_amount).toLocaleString("en-IN")}
+                      </span>
+                      <span className="text-[10px] text-[#9e6d27] block font-medium">
+                        {newlyCreatedBooking.guests} Guest(s) • {newlyCreatedBooking.check_in} to {newlyCreatedBooking.check_out}
+                      </span>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setSelectedInvoiceBooking(newlyCreatedBooking)}
+                      className="button button-dark px-4 py-2 text-xs flex items-center gap-1.5 shadow-sm cursor-pointer shrink-0"
+                    >
+                      <Printer size={13} />
+                      <span>Download PDF Slip</span>
+                    </button>
+                  </div>
+                )}
+
                 <div className="flex flex-wrap gap-3 justify-center pt-2">
+                  <button
+                    onClick={() => setSelectedInvoiceBooking(newlyCreatedBooking)}
+                    className="px-6 py-3 rounded-full bg-[#c8a36a] text-[#20352b] font-bold text-xs hover:bg-[#b8935a] transition-all cursor-pointer flex items-center gap-2 shadow-md"
+                  >
+                    <Printer size={14} />
+                    <span>View / Print Booking Slip (PDF)</span>
+                  </button>
                   <button
                     onClick={() => { setActiveTab("stays"); setBookingSuccess(false); }}
                     className="px-6 py-3 rounded-full bg-[#20352b] text-white font-semibold text-xs hover:bg-[#2c473a] transition-all cursor-pointer flex items-center gap-2 shadow-md"
@@ -1028,183 +1052,7 @@ export default function MyBookings() {
           </div>
         )}
 
-        {/* TAB: LIBRARY & BORROWED BOOKS */}
-        {activeTab === "library" && (
-          <div className="space-y-6 max-w-4xl mx-auto">
-            {/* Library Lounge Info Card */}
-            <div className="bg-[#fbf8f1] border border-[#20352b]/15 rounded-3xl p-6 sm:p-8 shadow-xs">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-[#20352b]/10 pb-6">
-                <div>
-                  <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#20352b]/10 text-[#20352b] text-xs font-semibold uppercase font-mono tracking-wider mb-2">
-                    <BookOpen size={12} className="text-[#c8a36a]" />
-                    <span>Complimentary Guest Library</span>
-                  </div>
-                  <h2 className="font-serif text-2xl font-bold text-[#20352b]">
-                    Reading Lounge & Casual Books
-                  </h2>
-                  <p className="text-xs text-[#77766c] mt-1 max-w-xl">
-                    Discover novels, poetry, Varanasi travelogues, and spiritual classics. You are welcome to take books to your room or read on our open terrace patio.
-                  </p>
-                </div>
-                <button
-                  onClick={loadMyLoans}
-                  disabled={loansLoading}
-                  className="px-4 py-2 rounded-xl bg-[#20352b]/5 hover:bg-[#20352b]/10 border border-[#20352b]/15 text-xs font-semibold text-[#20352b] flex items-center gap-1.5 transition-colors cursor-pointer"
-                >
-                  <RefreshCw size={12} className={loansLoading ? "animate-spin" : ""} />
-                  <span>Refresh Books</span>
-                </button>
-              </div>
 
-              {/* Status Notice */}
-              <div className="mt-4 p-4 rounded-2xl bg-[#efe7db]/60 border border-[#20352b]/10 flex items-start gap-3 text-xs text-[#20352b]">
-                <Sparkles size={16} className="text-[#c8a36a] shrink-0 mt-0.5" />
-                <div>
-                  <p className="font-bold">How Book Borrowing Works</p>
-                  <p className="text-[#77766c] mt-0.5">
-                    Browse books in our Ground Floor Reading Lounge shelf. Inform the front desk host or reception to check out a title to your room number. Please return books before your check-out date!
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* User Loans Section */}
-            {loansLoading ? (
-              <div className="bg-[#fbf8f1] border border-[#20352b]/15 rounded-3xl p-12 text-center text-[#77766c]">
-                <RefreshCw size={24} className="animate-spin text-[#c8a36a] mx-auto mb-2" />
-                <p className="text-xs">Loading your borrowed books...</p>
-              </div>
-            ) : myLoans.length === 0 ? (
-              <div className="bg-white border border-[#20352b]/15 rounded-3xl p-8 sm:p-12 text-center space-y-4 shadow-sm">
-                <div className="w-14 h-14 rounded-2xl bg-[#c8a36a]/15 text-[#9e6d27] flex items-center justify-center mx-auto">
-                  <BookOpen size={28} />
-                </div>
-                <h3 className="font-serif text-xl sm:text-2xl font-bold text-[#1a2f23]">
-                  No Books Checked Out Currently
-                </h3>
-                <p className="text-xs sm:text-sm text-[#4d544a] max-w-md mx-auto leading-relaxed">
-                  You do not currently have any books issued to your room. Visit the Casa Nest Reading Lounge on the ground floor to pick up novels, spiritual reads, and stories of Banaras.
-                </p>
-
-                <div className="pt-4 max-w-xl mx-auto grid grid-cols-1 sm:grid-cols-3 gap-3 text-left">
-                  <div className="p-3.5 rounded-2xl bg-[#f5f0e8] border border-[#20352b]/12 shadow-2xs">
-                    <span className="text-[10px] font-mono uppercase text-[#9e6d27] font-bold block">Spiritual & Heritage</span>
-                    <h5 className="font-bold text-xs text-[#1a2f23] mt-0.5">Banaras: City of Light</h5>
-                    <p className="text-[10px] text-[#4d544a] mt-1">Sacred topography and ghats of Varanasi.</p>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#f5f0e8] border border-[#20352b]/12 shadow-2xs">
-                    <span className="text-[10px] font-mono uppercase text-[#9e6d27] font-bold block">Relaxing Fiction</span>
-                    <h5 className="font-bold text-xs text-[#1a2f23] mt-0.5">The Room on the Roof</h5>
-                    <p className="text-[10px] text-[#4d544a] mt-1">Cozy Indian classic by Ruskin Bond.</p>
-                  </div>
-                  <div className="p-3.5 rounded-2xl bg-[#f5f0e8] border border-[#20352b]/12 shadow-2xs">
-                    <span className="text-[10px] font-mono uppercase text-[#9e6d27] font-bold block">Philosophical</span>
-                    <h5 className="font-bold text-xs text-[#1a2f23] mt-0.5">The Alchemist</h5>
-                    <p className="text-[10px] text-[#4d544a] mt-1">Fable of dreams and wisdom by Paulo Coelho.</p>
-                  </div>
-                </div>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                <h3 className="font-serif text-lg font-bold text-[#20352b] flex items-center gap-2">
-                  <BookMarked size={18} className="text-[#c8a36a]" />
-                  <span>My Borrowed Books ({myLoans.length})</span>
-                </h3>
-
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {myLoans.map((loan) => {
-                    const isReturned = loan.status === "returned";
-                    const isOverdue = !isReturned && new Date(loan.due_date) < new Date();
-
-                    return (
-                      <div
-                        key={loan.id}
-                        className={`bg-[#fbf8f1] border rounded-3xl p-5 shadow-xs flex flex-col justify-between transition-all ${
-                          isOverdue
-                            ? "border-rose-300 bg-rose-50/20"
-                            : isReturned
-                            ? "border-[#20352b]/10 opacity-75"
-                            : "border-[#20352b]/20 hover:border-[#c8a36a]"
-                        }`}
-                      >
-                        <div className="flex items-start gap-4">
-                          <img
-                            src={
-                              loan.book_cover ||
-                              "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"
-                            }
-                            alt={loan.book_title || "Book"}
-                            className="w-16 h-22 object-cover rounded-xl shadow-sm border border-[#20352b]/15 shrink-0"
-                          />
-
-                          <div className="space-y-1.5 flex-1 min-w-0">
-                            <div className="flex items-center justify-between gap-2">
-                              <span className="text-[10px] font-mono font-semibold uppercase px-2 py-0.5 rounded-full bg-[#20352b]/10 text-[#20352b]">
-                                {loan.book_genre || "Novel"}
-                              </span>
-
-                              {isReturned ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-emerald-800 bg-emerald-100 px-2.5 py-0.5 rounded-full">
-                                  <CheckCircle2 size={12} /> Returned
-                                </span>
-                              ) : isOverdue ? (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-bold text-rose-700 bg-rose-100 px-2.5 py-0.5 rounded-full animate-pulse">
-                                  <AlertTriangle size={12} /> Return Due
-                                </span>
-                              ) : (
-                                <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-800 bg-amber-100 px-2.5 py-0.5 rounded-full">
-                                  <Clock size={12} /> Currently Reading
-                                </span>
-                              )}
-                            </div>
-
-                            <h4 className="font-serif font-bold text-base text-[#20352b] line-clamp-1">
-                              {loan.book_title || `Book #${loan.book_id}`}
-                            </h4>
-                            <p className="text-xs text-[#77766c] line-clamp-1">
-                              by {loan.book_author || "Casa Nest Library"}
-                            </p>
-
-                            <div className="pt-2 border-t border-[#20352b]/10 grid grid-cols-2 gap-2 text-[11px] text-[#77766c]">
-                              <div>
-                                <span className="block font-mono text-[9px] uppercase text-[#77766c]">Issued To</span>
-                                <span className="font-semibold text-[#20352b] flex items-center gap-1">
-                                  <MapPin size={10} className="text-[#c8a36a]" /> Room {loan.room_number}
-                                </span>
-                              </div>
-                              <div>
-                                <span className="block font-mono text-[9px] uppercase text-[#77766c]">
-                                  {isReturned ? "Returned On" : "Return Due By"}
-                                </span>
-                                <span
-                                  className={`font-semibold ${
-                                    isOverdue ? "text-rose-600 font-bold" : "text-[#20352b]"
-                                  }`}
-                                >
-                                  {new Date(isReturned && loan.return_date ? loan.return_date : loan.due_date).toLocaleDateString(
-                                    "en-IN",
-                                    { day: "numeric", month: "short", year: "numeric" }
-                                  )}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-
-                        {!isReturned && (
-                          <div className="mt-3 pt-3 border-t border-[#20352b]/10 text-[10px] text-[#77766c] flex items-center justify-between">
-                            <span>Shelf: {loan.book_location || "Main Lounge Shelf"}</span>
-                            <span className="text-[#20352b] font-medium">Please hand over to host on check-out</span>
-                          </div>
-                        )}
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
 
         {/* TAB 2: MY PROFILE */}
         {activeTab === "profile" && (
@@ -1377,16 +1225,7 @@ export default function MyBookings() {
         onClose={() => setSelectedInvoiceBooking(null)}
       />
 
-      {/* Online Payment Modal */}
-      <BookingPaymentModal
-        booking={paymentModalBooking}
-        isOpen={Boolean(paymentModalBooking)}
-        onClose={() => setPaymentModalBooking(null)}
-        onSuccess={(updated) => {
-          loadMyBookings();
-          setSelectedInvoiceBooking(updated);
-        }}
-      />
+
 
       {/* Write Review Modal */}
       <WriteReviewModal

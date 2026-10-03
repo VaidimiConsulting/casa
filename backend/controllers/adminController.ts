@@ -72,6 +72,24 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
     const todayBookingRevenue = Number((bookingRevRows as any[])[0]?.total || 0);
     const todayRevenue = todayBookingRevenue;
 
+    // Week revenue
+    const [weekBookingRevRows] = await pool.query(
+      "SELECT COALESCE(SUM(total_amount), 0) as total FROM bookings WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 7 DAY) AND payment_status = 'paid'"
+    );
+    const weekRevenue = Number((weekBookingRevRows as any[])[0]?.total || 0);
+
+    // Month revenue
+    const [monthBookingRevRows] = await pool.query(
+      "SELECT COALESCE(SUM(total_amount), 0) as total FROM bookings WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY) AND payment_status = 'paid'"
+    );
+    const monthRevenue = Number((monthBookingRevRows as any[])[0]?.total || 0);
+
+    // Month customers (unique emails in the last 30 days)
+    const [monthCustomersRows] = await pool.query(
+      "SELECT COUNT(DISTINCT guest_email) as total FROM bookings WHERE created_at >= DATE_SUB(CURDATE(), INTERVAL 30 DAY)"
+    );
+    const monthCustomers = Number((monthCustomersRows as any[])[0]?.total || 0);
+
     // Total revenue all time
     const [allBookingRevRows] = await pool.query(
       "SELECT COALESCE(SUM(total_amount), 0) as total FROM bookings WHERE payment_status = 'paid'"
@@ -126,6 +144,9 @@ export async function getDashboardStats(req: Request, res: Response): Promise<vo
         todayCheckOuts,
         todayOrders: 0,
         todayRevenue,
+        weekRevenue,
+        monthRevenue,
+        monthCustomers,
         todayBookingRevenue,
         todayOrderRevenue: 0,
         totalBookingRevenue,
@@ -167,15 +188,6 @@ export async function getReports(req: Request, res: Response): Promise<void> {
       ORDER BY date ASC
     `);
 
-    // Daily food orders trends
-    const [orderTrends] = await pool.query(`
-      SELECT DATE(created_at) as date, COUNT(*) as total_orders, COALESCE(SUM(total_amount), 0) as revenue
-      FROM food_orders
-      WHERE ${dateFilter}
-      GROUP BY DATE(created_at)
-      ORDER BY date ASC
-    `);
-
     // Room popularity / occupancy
     const [roomPopularity] = await pool.query(`
       SELECT r.name, COUNT(b.id) as bookings_count, COALESCE(SUM(b.total_amount), 0) as revenue
@@ -185,22 +197,13 @@ export async function getReports(req: Request, res: Response): Promise<void> {
       ORDER BY bookings_count DESC
     `);
 
-    // Top selling menu items
-    const [topMenuItems] = await pool.query(`
-      SELECT item_name, SUM(quantity) as total_sold, SUM(subtotal) as total_revenue
-      FROM food_order_items
-      GROUP BY item_name
-      ORDER BY total_sold DESC
-      LIMIT 8
-    `);
-
     res.json({
       success: true,
       period,
       bookingTrends,
-      orderTrends,
+      orderTrends: [],
       roomPopularity,
-      topMenuItems,
+      topMenuItems: [],
     });
   } catch (error) {
     console.error("Reports error:", error);

@@ -26,6 +26,7 @@ import {
   PartyPopper,
   BookOpen,
   Coffee,
+  IndianRupee,
 } from "lucide-react";
 import { getCurrentUser, logout } from "@/api/auth";
 
@@ -45,8 +46,9 @@ const navItems = [
   { label: "Check-In / Out", href: "/admin/checkin", icon: UserCheck },
   { label: "Room Services & Kettle", href: "/admin/services", icon: Coffee },
   { label: "Patio Events", href: "/admin/patio", icon: PartyPopper },
-  { label: "Library", href: "/admin/library", icon: BookOpen },
+
   { label: "Payments", href: "/admin/payments", icon: CreditCard },
+  { label: "Finance & Expenses", href: "/admin/finance", icon: IndianRupee },
   { label: "Gallery", href: "/admin/gallery", icon: ImageIcon },
   { label: "Customers", href: "/admin/customers", icon: Users },
   { label: "Offers & Coupons", href: "/admin/coupons", icon: Tag },

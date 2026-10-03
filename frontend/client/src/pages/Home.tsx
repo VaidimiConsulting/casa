@@ -4,10 +4,12 @@ import { sendContactMessage } from "@/api/contact";
 import { getCurrentUser, logout, AuthUser } from "@/api/auth";
 import { fetchRooms, Room as ApiRoom } from "@/api/rooms";
 import { fetchGallery, GalleryItem } from "@/api/gallery";
-import { fetchBooks, LibraryBook } from "@/api/library";
+
 import { fetchReviews, Review as ApiReview } from "@/api/reviews";
 import PatioBookingModal from "@/components/PatioBookingModal";
 import WriteReviewModal from "@/components/WriteReviewModal";
+import BookingInvoiceModal from "@/components/BookingInvoiceModal";
+import EnquirySlipModal from "@/components/EnquirySlipModal";
 import AllReviewsModal from "@/components/AllReviewsModal";
 import RoomDetailModal, { RoomDetail } from "@/components/RoomDetailModal";
 import gsap from "gsap";
@@ -164,9 +166,9 @@ const gallery = [
   { image: "/images/gallery/casa_luz_nightstand.jpg", alt: "Casa Luz Bedside Pampas Grass & Olive Green Drapes", wide: false, category: "Lounge & Ambiance" },
   { image: "/images/gallery/casa_luz_decor.jpg", alt: "Ceramic Donut Vase & Dried Botanicals", wide: false, category: "Lounge & Ambiance" },
   { image: "/images/gallery/casa_luz_suite.jpg", alt: "Casa Luz Suite – Full Room Perspective & Wardrobe", wide: true, category: "Rooms & Suites" },
-  { image: "https://images.unsplash.com/photo-1600607687920-4e2a09cf159d?auto=format&fit=crop&w=1200&q=88", alt: "Sunlit Casa Nest Main Lounge", wide: false, category: "Lounge & Ambiance" },
-  { image: images.gallery3, alt: "Artisanal Homestay Dining Space", wide: true, category: "Dining & Cafe" },
-  { image: images.gallery6, alt: "Fairy-Lit Evening Patio Seating", wide: false, category: "Terrace & Patio" },
+
+
+
 ];
 
 const testimonials = [
@@ -273,18 +275,35 @@ export default function Home() {
         rating: r.rating || 5,
       }));
     }
-    return testimonials;
+    return [];
   }, [liveReviews]);
 
-  const activeReview = allTestimonials[activeTestimonial] || allTestimonials[0] || testimonials[0];
+  const activeReview = allTestimonials[activeTestimonial];
   const [testimonialPaused, setTestimonialPaused] = useState(false);
   const [bookingSent, setBookingSent] = useState(false);
+  const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+  const [confirmedBookingForInvoice, setConfirmedBookingForInvoice] = useState<any>(null);
+  const [isEnquiryModalOpen, setIsEnquiryModalOpen] = useState(false);
+  const [confirmedEnquiry, setConfirmedEnquiry] = useState<any>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [toast, setToast] = useState("");
-  const [guests, setGuests] = useState(2);
+  const [childrenVal, setChildrenVal] = useState(0);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [displayRooms, setDisplayRooms] = useState(rooms);
-  const [selectedRoomId, setSelectedRoomId] = useState<number>(1);
+  const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([1]);
+  const [isRoomDropdownOpen, setIsRoomDropdownOpen] = useState(false);
+  const roomDropdownRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (roomDropdownRef.current && !roomDropdownRef.current.contains(event.target as Node)) {
+        setIsRoomDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+  const [paymentMethod, setPaymentMethod] = useState("cash");
   const [checkInVal, setCheckInVal] = useState<string>("");
   const [checkOutVal, setCheckOutVal] = useState<string>("");
   const [bookedDates, setBookedDates] = useState<BookedDateRange[]>([]);
@@ -298,7 +317,7 @@ export default function Home() {
   const [enquirySent, setEnquirySent] = useState(false);
   const [customGallery, setCustomGallery] = useState<GalleryItem[]>([]);
   const [galleryFilter, setGalleryFilter] = useState("All");
-  const [libraryBooks, setLibraryBooks] = useState<LibraryBook[]>([]);
+
   const [isPatioModalOpen, setIsPatioModalOpen] = useState(false);
   const [selectedDetailRoom, setSelectedDetailRoom] = useState<RoomDetail | null>(null);
   const heroRef = useRef<HTMLElement>(null);
@@ -366,14 +385,6 @@ export default function Home() {
         }
       })
       .catch((err) => console.log("Gallery fetch error:", err));
-
-    fetchBooks()
-      .then((books) => {
-        if (books && books.length > 0) {
-          setLibraryBooks(books);
-        }
-      })
-      .catch((err) => console.log("Library books fetch error:", err));
 
     loadApprovedReviews();
   }, []);
@@ -445,7 +456,7 @@ export default function Home() {
 
   useEffect(() => {
     let isMounted = true;
-    fetchRoomBookedDates(selectedRoomId)
+    fetchRoomBookedDates(selectedRoomIds[0] || 1)
       .then((ranges) => {
         if (isMounted) setBookedDates(ranges);
       })
@@ -453,7 +464,7 @@ export default function Home() {
     return () => {
       isMounted = false;
     };
-  }, [selectedRoomId]);
+  }, [selectedRoomIds]);
 
   useEffect(() => {
     if (!checkInVal || !checkOutVal) {
@@ -584,6 +595,13 @@ export default function Home() {
 
   const submitBooking = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!currentUser) {
+      setToast("Please login or register first to book a room.");
+      setTimeout(() => {
+        window.location.href = '/login';
+      }, 1500);
+      return;
+    }
     const nameVal = guestNameRef.current?.value?.trim() || currentUser?.name || "";
     const emailVal = emailRef.current?.value?.trim() || currentUser?.email || "";
 
@@ -613,10 +631,12 @@ export default function Home() {
       return;
     }
 
-    if (guests < 1 || guests > 10) {
-      setToast("Guest count must be between 1 and 10.");
+    
+    if (selectedRoomIds.length === 0) {
+      setToast("Please select at least one room.");
       return;
     }
+
 
     if (datesUnavailable) {
       setToast("Selected dates are already booked for this room.");
@@ -625,18 +645,38 @@ export default function Home() {
 
     setBookingLoading(true);
     try {
-      await createBooking({
+      const res = await createBooking({
         guest_name: nameVal,
         guest_email: emailVal,
         check_in: checkInVal,
         check_out: checkOutVal,
-        guests,
-        room_id: selectedRoomId,
+        guests: displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0),
+        room_id: selectedRoomIds, males: 0, females: 0, children: childrenVal, payment_method: paymentMethod,
         notes: roomRef.current?.selectedOptions[0]?.text
           ? `Room preference: ${roomRef.current.selectedOptions[0].text}`
           : undefined,
       });
       setBookingSent(true);
+      const selectedRoomObj = displayRooms.find((r) => selectedRoomIds.includes(r.id));
+      const nights = Math.max(1, Math.ceil((new Date(checkOutVal).getTime() - new Date(checkInVal).getTime()) / (1000 * 60 * 60 * 24)));
+      const rawPrice = selectedRoomObj ? parseInt(selectedRoomObj.price.replace(/[^\d]/g, ""), 10) : 3500;
+      setConfirmedBookingForInvoice({
+        id: res.bookingId,
+        user_id: currentUser?.id || null,
+        room_id: selectedRoomIds,
+        room_name: displayRooms.filter(r => selectedRoomIds.includes(r.id)).map(r => r.name).join(", "),
+        guest_name: nameVal,
+        guest_email: emailVal,
+        check_in: checkInVal,
+        check_out: checkOutVal,
+        guests: displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0),
+        total_amount: rawPrice * nights,
+        status: "pending",
+        payment_status: "pending",
+        payment_method: paymentMethod,
+        created_at: new Date().toISOString()
+      });
+      setIsInvoiceModalOpen(true);
       setToast("Your stay enquiry is registered! Check your My Bookings portal.");
     } catch (err: any) {
       if (err.response?.status === 409) {
@@ -687,6 +727,16 @@ export default function Home() {
         message: messageVal,
       });
       setEnquirySent(true);
+      setConfirmedEnquiry({
+        id: Math.floor(Math.random() * 10000),
+        name: enquiryName,
+        email: enquiryEmail,
+        phone: enquiryPhone,
+        subject: enquirySubject,
+        message: enquiryMessage,
+        created_at: new Date().toISOString()
+      });
+      setIsEnquiryModalOpen(true);
       setToast("Enquiry sent! Admin panel has received your message.");
       setEnquiryMessage("");
     } catch (err: any) {
@@ -711,7 +761,6 @@ export default function Home() {
             <button onClick={() => scrollTo("attractions")}>Attractions</button>
             <button onClick={() => scrollTo("reviews")}>Reviews</button>
             <button onClick={() => scrollTo("patio")}>Open Patio</button>
-            <button onClick={() => scrollTo("library")}>Library</button>
             <button onClick={() => scrollTo("gallery")}>Gallery</button>
             <button onClick={() => scrollTo("contact")}>Contact</button>
             {/* Mobile dropdown drawer only */}
@@ -801,8 +850,8 @@ export default function Home() {
               eyebrow="Our rooms"
               title="Spaces designed for your comfort"
               copy="Elegant, cosy and inspired by nature — each room tells a different story. Click any room or arrow to explore authentic photos & details."
-              action="Explore All Rooms"
-              onAction={() => setToast("Click any room card or arrow (↗) to explore full photos & amenities.")}
+
+
             />
             <div className="rooms-grid">
               {displayRooms.map((room, index) => (
@@ -858,7 +907,7 @@ export default function Home() {
                     <button
                       className="room-link flex-1"
                       onClick={() => {
-                        setSelectedRoomId(room.id);
+                        setSelectedRoomIds([room.id]);
                         scrollTo("booking");
                       }}
                     >
@@ -1233,7 +1282,7 @@ export default function Home() {
                 </div>
 
                 <p className="text-xs sm:text-sm text-[#77766c] leading-relaxed">
-                  Casa Nest&apos;s rooftop open patio is thoughtfully curated for small celebrations of <strong>30 to 40 guests</strong>. Whether you&apos;re planning a cozy dinner party, small family gathering, birthday celebration, corporate team mixer, or an intimate get-together, our fairy-lit ambiance, music setup, and bespoke culinary feasts make every moment unforgettable.
+                  Casa Nest&apos;s rooftop open patio is thoughtfully curated for small celebrations of <strong>12 to 18 guests</strong>. Whether you&apos;re planning a cozy dinner party, small family gathering, birthday celebration, corporate team mixer, or an intimate get-together, our fairy-lit ambiance, music setup, and bespoke culinary feasts make every moment unforgettable.
                 </p>
 
                 {/* Key Capacity & Event Highlights */}
@@ -1241,10 +1290,10 @@ export default function Home() {
                   <div className="p-3.5 rounded-2xl bg-white border border-[#20352b]/10 shadow-xs">
                     <div className="flex items-center gap-2 text-[#20352b] font-semibold text-xs mb-1">
                       <Users size={14} className="text-[#c8a36a]" />
-                      <span>30 – 40 Guests</span>
+                      <span>12 – 18 Guests</span>
                     </div>
                     <span className="text-[11px] text-[#77766c] block leading-tight">
-                      Capacity: 30 to 40 guests
+                      Capacity: 12 to 18 guests
                     </span>
                   </div>
 
@@ -1261,10 +1310,10 @@ export default function Home() {
                   <div className="p-3.5 rounded-2xl bg-white border border-[#20352b]/10 shadow-xs">
                     <div className="flex items-center gap-2 text-[#20352b] font-semibold text-xs mb-1">
                       <Utensils size={14} className="text-[#c8a36a]" />
-                      <span>Food & Catering Available</span>
+                      <span>Breakfast & Snacks Available</span>
                     </div>
                     <span className="text-[11px] text-[#77766c] block leading-tight">
-                      Fresh in-house Banarasi feasts & custom menus on request
+                      Only breakfast and snacks are provided (no main meals)
                     </span>
                   </div>
 
@@ -1334,167 +1383,6 @@ export default function Home() {
                   </div>
                 </div>
               </div>
-            </div>
-          </div>
-        </section>
-
-        {/* Homestay Library & Reading Lounge Section */}
-        <section id="library" className="library-section section-pad bg-[#fbf8f1] border-y border-[#20352b]/10">
-          <div className="container">
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-10 reveal">
-              <div>
-                <span className="eyebrow flex items-center gap-1.5 text-[#c8a36a]">
-                  <BookOpen size={14} /> Complimentary Homestay Amenity
-                </span>
-                <h2 className="text-3xl sm:text-4xl font-serif text-[#20352b] mt-1">
-                  Reading Lounge & <em>Casual Library</em>
-                </h2>
-                <p className="text-xs sm:text-sm text-[#77766c] max-w-2xl mt-2 leading-relaxed">
-                  Slow stays at Casa Nest come with books and quiet nooks. In-house guests enjoy complimentary access to our handpicked collection of novels, poetry, Varanasi travelogues, and spiritual classics — to read in the lounge, on the open terrace patio, or in your room.
-                </p>
-              </div>
-
-              <div className="flex items-center gap-3 shrink-0">
-                {currentUser ? (
-                  <a
-                    href="/my-bookings"
-                    className="button button-quiet text-xs inline-flex items-center gap-1.5"
-                  >
-                    <span>My Borrowed Books</span>
-                    <ArrowUpRight size={14} />
-                  </a>
-                ) : (
-                  <button
-                    onClick={() => scrollTo("booking")}
-                    className="button button-dark text-xs inline-flex items-center gap-1.5"
-                  >
-                    <span>Book Stay for Access</span>
-                    <ArrowRight size={14} />
-                  </button>
-                )}
-              </div>
-            </div>
-
-            {/* Highlights Strip */}
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-10 reveal">
-              <div className="p-5 rounded-2xl bg-white border border-[#20352b]/10 shadow-xs flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#c8a36a]/15 text-[#c8a36a] flex items-center justify-center shrink-0">
-                  <BookOpen size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#20352b]">100% Complimentary</h4>
-                  <p className="text-xs text-[#77766c] mt-0.5">
-                    Free borrowing for all in-house homestay guests during their stay.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white border border-[#20352b]/10 shadow-xs flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-emerald-100 text-emerald-800 flex items-center justify-center shrink-0">
-                  <Sparkles size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#20352b]">Curated Banaras Reads</h4>
-                  <p className="text-xs text-[#77766c] mt-0.5">
-                    Spiritual classics, Ruskin Bond, Indian fiction & Varanasi city guides.
-                  </p>
-                </div>
-              </div>
-
-              <div className="p-5 rounded-2xl bg-white border border-[#20352b]/10 shadow-xs flex items-start gap-3.5">
-                <div className="w-10 h-10 rounded-xl bg-[#20352b]/10 text-[#20352b] flex items-center justify-center shrink-0">
-                  <BedDouble size={20} />
-                </div>
-                <div>
-                  <h4 className="font-bold text-sm text-[#20352b]">Room Issue & Tracking</h4>
-                  <p className="text-xs text-[#77766c] mt-0.5">
-                    Take books to your room and manage your reading list via guest portal.
-                  </p>
-                </div>
-              </div>
-            </div>
-
-            {/* Live Books Showcase Grid */}
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-4 reveal">
-              {(libraryBooks.length > 0 ? libraryBooks.slice(0, 6) : [
-                {
-                  id: 1,
-                  title: "Banaras: City of Light",
-                  author: "Diana L. Eck",
-                  genre: "Travel & Culture",
-                  cover_image: "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80",
-                  location: "Lounge Shelf A1",
-                },
-                {
-                  id: 2,
-                  title: "The Room on the Roof",
-                  author: "Ruskin Bond",
-                  genre: "Fiction",
-                  cover_image: "https://images.unsplash.com/photo-1512820790803-83ca734da794?auto=format&fit=crop&w=600&q=80",
-                  location: "Lounge Shelf A2",
-                },
-                {
-                  id: 3,
-                  title: "Autobiography of a Yogi",
-                  author: "Paramahansa Yogananda",
-                  genre: "Spiritual",
-                  cover_image: "https://images.unsplash.com/photo-1532012164546-f432f2e3edd7?auto=format&fit=crop&w=600&q=80",
-                  location: "Spiritual Corner B1",
-                },
-                {
-                  id: 4,
-                  title: "The Alchemist",
-                  author: "Paulo Coelho",
-                  genre: "Fiction",
-                  cover_image: "https://images.unsplash.com/photo-1543002588-bfa74002ed7e?auto=format&fit=crop&w=600&q=80",
-                  location: "Lounge Shelf A3",
-                },
-                {
-                  id: 5,
-                  title: "Shantaram",
-                  author: "Gregory David Roberts",
-                  genre: "Novel",
-                  cover_image: "https://images.unsplash.com/photo-1497633762265-9d179a990aa6?auto=format&fit=crop&w=600&q=80",
-                  location: "Fiction Section C1",
-                },
-                {
-                  id: 6,
-                  title: "Gitanjali",
-                  author: "Rabindranath Tagore",
-                  genre: "Poetry",
-                  cover_image: "https://images.unsplash.com/photo-1476275466078-4007374efbbe?auto=format&fit=crop&w=600&q=80",
-                  location: "Poetry & Classics D1",
-                }
-              ]).map((book) => (
-                <div
-                  key={book.id}
-                  className="bg-white rounded-2xl border border-[#20352b]/10 shadow-xs overflow-hidden flex flex-col hover:shadow-md hover:border-[#c8a36a]/40 transition-all group"
-                >
-                  <div className="relative h-44 bg-[#f5f0e8] overflow-hidden">
-                    <img
-                      src={book.cover_image || "https://images.unsplash.com/photo-1544716278-ca5e3f4abd8c?auto=format&fit=crop&w=600&q=80"}
-                      alt={book.title}
-                      className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute top-2 left-2 bg-[#20352b]/90 text-white text-[9px] font-semibold px-2 py-0.5 rounded-full backdrop-blur-xs">
-                      {book.genre || "Novel"}
-                    </div>
-                  </div>
-                  <div className="p-3 flex-1 flex flex-col justify-between">
-                    <div>
-                      <h4 className="font-serif font-bold text-xs text-[#20352b] line-clamp-1 group-hover:text-[#c8a36a] transition-colors">
-                        {book.title}
-                      </h4>
-                      <p className="text-[10px] text-[#77766c] line-clamp-1 mt-0.5">
-                        by {book.author}
-                      </p>
-                    </div>
-                    <span className="text-[9px] font-mono text-[#c8a36a] font-semibold block mt-2 pt-2 border-t border-[#20352b]/10 truncate">
-                      {book.location || "Lounge Shelf"}
-                    </span>
-                  </div>
-                </div>
-              ))}
             </div>
           </div>
         </section>
@@ -1629,7 +1517,7 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Featured Testimonial Spotlight */}
+            {/* Featured Testimonial Spotlight */}`n            {allTestimonials.length > 0 ? (
             <div className="testimonials-wrap mb-12">
               <div className="testimonial-stage" onMouseEnter={() => setTestimonialPaused(true)} onMouseLeave={() => setTestimonialPaused(false)}>
                 <button className="carousel-arrow left" aria-label="Previous testimonial" onClick={() => setActiveTestimonial((activeTestimonial - 1 + allTestimonials.length) % allTestimonials.length)}>
@@ -1637,19 +1525,19 @@ export default function Home() {
                 </button>
                 <div className="testimonial-card">
                   <Quote className="quote-icon" size={26} />
-                  <div className="stars" aria-label={`${activeReview.rating || 5} out of 5 stars`}>
+                  <div className="stars" aria-label={`${activeReview?.rating || 5} out of 5 stars`}>
                     {Array.from({ length: 5 }).map((_, index) => (
                       <Star
                         key={index}
                         size={16}
-                        className={index < (activeReview.rating || 5) ? "fill-[#c8a36a] text-[#c8a36a]" : "text-[#77766c]/30"}
+                        className={index < (activeReview?.rating || 5) ? "fill-[#c8a36a] text-[#c8a36a]" : "text-[#77766c]/30"}
                       />
                     ))}
                   </div>
-                  <blockquote>“{activeReview.quote}”</blockquote>
+                  <blockquote>“{activeReview?.quote}”</blockquote>
                   <div className="guest">
-                    <span className="guest-avatar">{activeReview.initials}</span>
-                    <span><strong>{activeReview.name}</strong><small>{activeReview.city}</small></span>
+                    <span className="guest-avatar">{activeReview?.initials}</span>
+                    <span><strong>{activeReview?.name}</strong><small>{activeReview?.city}</small></span>
                   </div>
                 </div>
                 <button className="carousel-arrow right" aria-label="Next testimonial" onClick={() => setActiveTestimonial((activeTestimonial + 1) % allTestimonials.length)}>
@@ -1667,6 +1555,11 @@ export default function Home() {
                 ))}
               </div>
             </div>
+            ) : (
+              <div className="text-center p-12 bg-white rounded-3xl border border-[#20352b]/10 shadow-sm mb-12">
+                <p className="text-[#77766c]">No reviews yet. Be the first to share your experience!</p>
+              </div>
+            )}
 
             {/* Top Reviews Cards Grid (Shows top 3-4 reviews, opens full modal for all) */}
             <div className="space-y-6">
@@ -1684,37 +1577,12 @@ export default function Home() {
                   onClick={() => setIsAllReviewsModalOpen(true)}
                   className="text-xs font-semibold text-[#c8a36a] hover:underline inline-flex items-center gap-1 cursor-pointer"
                 >
-                  <span>See All Reviews ({liveReviews.length > 0 ? liveReviews.length : 3}) →</span>
+                  <span>See All Reviews ({liveReviews.length}) →</span>
                 </button>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                {(liveReviews.length > 0 ? liveReviews.slice(0, 3) : [
-                  {
-                    id: 1,
-                    customer_name: "Riya Sharma",
-                    rating: 5,
-                    review: "Felt like home from the very first moment. Beautiful ambience, clean rooms with swan origami, and amazing hospitality!",
-                    room_name: "Room 101 — Casa Luz (House of Light)",
-                    created_at: new Date().toISOString(),
-                  },
-                  {
-                    id: 2,
-                    customer_name: "Amit Verma",
-                    rating: 5,
-                    review: "The peaceful serene vibe inside Kashi is just magical. Peaceful, extremely safe, and the open rooftop patio was wonderful.",
-                    room_name: "Room 102 — Casa Sereno (Calm & Peaceful)",
-                    created_at: new Date().toISOString(),
-                  },
-                  {
-                    id: 3,
-                    customer_name: "Sneha Iyer",
-                    rating: 5,
-                    review: "Perfect blend of comfort, culture, and calm. Handcrafted teak furniture and very supportive host team. Highly recommended!",
-                    room_name: "Room 104 — Casa Amore (Romantic & Cozy)",
-                    created_at: new Date().toISOString(),
-                  },
-                ]).map((rev: any) => {
+                {liveReviews.slice(0, 3).map((rev: any) => {
                   const initials = rev.customer_name
                     ? rev.customer_name
                         .split(" ")
@@ -1792,7 +1660,7 @@ export default function Home() {
                   className="button button-dark px-6 py-3 text-xs flex items-center gap-2 shadow-md hover:scale-[1.02] transition-transform cursor-pointer w-full sm:w-auto justify-center"
                 >
                   <MessageSquareQuote size={15} className="text-[#c8a36a]" />
-                  <span>See All Reviews ({liveReviews.length > 0 ? liveReviews.length : 3})</span>
+                  <span>See All Reviews ({liveReviews.length})</span>
                   <ArrowRight size={14} />
                 </button>
                 <button
@@ -1809,7 +1677,116 @@ export default function Home() {
 
         <section className="stay-banner"><img src={images.stay} alt="Quiet sitting room overlooking greenery" loading="lazy" /><div className="stay-overlay" /><div className="container stay-content"><div><span className="eyebrow">A little more time for yourself</span><h2>Your peaceful stay<br /><em>awaits.</em></h2></div><button className="button button-light" onClick={() => scrollTo("booking")}>Book your stay<ArrowRight size={15} /></button></div></section>
 
-        <section id="booking" className="booking-section section-pad"><div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Thank you for reaching out.</h3><p>We’ve received your stay enquiry and will reply soon. You can also view it anytime in your My Bookings portal.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row"><label>Room<select value={selectedRoomId} ref={roomRef} onChange={(e) => setSelectedRoomId(Number(e.target.value))}>{displayRooms.map((r) => <option key={r.id} value={r.id}>{r.name} — {r.badge} ({r.price}/night)</option>)}</select></label><label>Guests<div className="guest-control"><button type="button" aria-label="Decrease guests" onClick={() => setGuests((value) => Math.max(1, value - 1))}><Minus size={14} /></button><span>{guests} {guests === 1 ? "guest" : "guests"}</span><button type="button" aria-label="Increase guests" onClick={() => setGuests((value) => Math.min(6, value + 1))}><Plus size={14} /></button></div></label></div><label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
+        <section id="booking" className="booking-section section-pad"><div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Thank you for reaching out.</h3><p>We’ve received your stay enquiry and will reply soon. You can also view it anytime in your My Bookings portal.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row" style={{ alignItems: 'flex-start' }}>
+<label>
+  Room(s) 
+  <div className="relative w-full" ref={roomDropdownRef}>
+        <div 
+          onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
+          style={{
+            padding: '0 12px',
+            minHeight: '44px',
+            backgroundColor: '#f5f0e8',
+            border: '1px solid rgba(32, 53, 43, 0.13)',
+            borderRadius: '2px',
+            cursor: 'pointer',
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'center',
+            fontFamily: "'DM Sans', sans-serif",
+            fontSize: '12px',
+            letterSpacing: '0',
+            textTransform: 'none',
+            color: '#20352b'
+          }}
+        >
+          <span>
+            {selectedRoomIds.length === 0 
+              ? "Select Rooms" 
+              : selectedRoomIds.length === 1 
+                ? displayRooms.find(r => r.id === selectedRoomIds[0])?.name || "1 Room Selected"
+                : `${selectedRoomIds.length} Rooms Selected`
+            }
+          </span>
+          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isRoomDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><path d="m6 9 6 6 6-6"/></svg>
+        </div>
+        
+        {isRoomDropdownOpen && (
+          <div style={{
+            position: 'absolute',
+            top: '100%',
+            left: 0,
+            right: 0,
+            marginTop: '4px',
+            backgroundColor: '#fff',
+            border: '1px solid rgba(32, 53, 43, 0.15)',
+            borderRadius: '8px',
+            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+            zIndex: 50,
+            maxHeight: '220px',
+            overflowY: 'auto',
+            padding: '8px'
+          }}>
+            {displayRooms.map((r) => {
+              const cap = r.guests.includes("3") ? 3 : 2;
+              return (
+                <label key={r.id} style={{
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: '12px',
+                  padding: '8px',
+                  cursor: 'pointer',
+                  borderRadius: '6px',
+                  transition: 'background 0.2s'
+                }} className="hover:bg-[#f5f0e8]">
+                  <input
+                    type="checkbox"
+                    value={r.id}
+                    checked={selectedRoomIds.includes(r.id)}
+                    onChange={(e) => {
+                      if (e.target.checked) {
+                        setSelectedRoomIds([...selectedRoomIds, r.id]);
+                      } else {
+                        setSelectedRoomIds(selectedRoomIds.filter(id => id !== r.id));
+                      }
+                    }}
+                    style={{
+                      width: '18px',
+                      height: '18px',
+                      margin: 0,
+                      cursor: 'pointer',
+                      accentColor: '#20352b'
+                    }}
+                  />
+                  <div style={{ display: 'flex', flexDirection: 'column' }}>
+                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#20352b' }}>{r.name}</span>
+                    <span style={{ fontSize: '11px', color: '#77766c' }}>{r.badge} ({cap} Guests) — ₹{r.price.replace(/[^0-9,]/g, "")}/night</span>
+                  </div>
+                </label>
+              );
+            })}
+          </div>
+        )}
+      </div>
+</label>
+<div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+  <label style={{ margin: 0 }}>
+        Adult Guests
+        <div style={{ padding: '0 12px', minHeight: '44px', display: 'flex', alignItems: 'center', backgroundColor: '#f5f0e8', borderRadius: '2px', border: '1px solid rgba(32, 53, 43, 0.13)', fontFamily: "'DM Sans', sans-serif", fontSize: '12px', letterSpacing: '0', textTransform: 'none', color: '#20352b' }}>
+          {displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0)} Adults (Fixed based on rooms)
+        </div>
+      </label>
+  <label style={{ margin: 0 }}>
+    Children (0-15 Yrs)
+    <div className="guest-control">
+      <button type="button" onClick={() => setChildrenVal((v) => Math.max(0, v - 1))}><Minus size={14} /></button>
+      <span>{childrenVal}</span>
+      <button type="button" onClick={() => setChildrenVal((v) => Math.min(2, v + 1))}><Plus size={14} /></button>
+    </div>
+  </label>
+
+</div>
+</div><label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
 
         <section id="contact" className="section-pad section-soft">
           <div className="container">
@@ -1960,8 +1937,10 @@ export default function Home() {
           </div>
         </section>
       </main>
+      <BookingInvoiceModal booking={confirmedBookingForInvoice} isOpen={isInvoiceModalOpen} onClose={() => setIsInvoiceModalOpen(false)} />
+      <EnquirySlipModal enquiry={confirmedEnquiry} isOpen={isEnquiryModalOpen} onClose={() => setIsEnquiryModalOpen(false)} />
 
-      <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><BrandMark light /><p>Stay different.<br />Feel at home.</p><span className="footer-leaf" aria-hidden="true">⌁</span></div><div className="footer-links"><strong>Quick Links</strong><button onClick={() => scrollTo("home")}>Home</button><button onClick={() => scrollTo("about")}>About</button><button onClick={() => scrollTo("rooms")}>Rooms</button><button onClick={() => scrollTo("facilities")}>Facilities</button><button onClick={() => scrollTo("experiences")}>Experiences</button><button onClick={() => scrollTo("attractions")}>Attractions</button><button onClick={() => scrollTo("reviews")}>Guest Reviews</button><button onClick={() => scrollTo("patio")}>Open Patio</button><button onClick={() => scrollTo("library")}>Library</button><button onClick={() => scrollTo("gallery")}>Gallery</button><button onClick={() => scrollTo("contact")}>Contact</button><button onClick={() => window.location.href = "/admin/login"}>Staff & Admin Portal</button></div><div className="footer-contact"><strong>Contact Us</strong><a href="tel:+918400095434"><Phone size={13} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={13} /> +91 93369 41261</a><a href="mailto:Info@casanesthomestay.in"><Send size={13} /> Info@casanesthomestay.in</a><a href="https://maps.google.com/?q=B23/33+Plot+58,+Gurudham+Colony,+Near+PMO+Office,+Varanasi" target="_blank" rel="noreferrer"><MapPin size={13} /> B23/33 Plot 58, Gurudham Colony (Near PMO Office), Varanasi</a><div className="socials"><a href="https://www.instagram.com/casa_nest__?stkn=eWU0M3Ryb3lvZjkx&utm_source=qr" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div className="footer-newsletter"><strong>Newsletter</strong><p>Get updates, offers and travel stories.</p><form onSubmit={(event) => { event.preventDefault(); setToast("You’re on the Casa Nest list. Welcome in."); }}><input type="email" aria-label="Email address" placeholder="Enter your email" required /><button type="submit" aria-label="Subscribe"><ArrowRight size={15} /></button></form></div></div><div className="container footer-bottom"><span>© 2025 Casa Nest. All rights reserved.</span><div><button onClick={() => setToast("Privacy is part of feeling at home.")}>Privacy Policy</button><button onClick={() => setToast("Terms coming soon.")}>Terms & Conditions</button><button onClick={() => window.location.href = "/admin/login"}>Admin Login</button></div></div></footer>
+      <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><BrandMark light /><p>Stay different.<br />Feel at home.</p><span className="footer-leaf" aria-hidden="true">⌁</span></div><div className="footer-links"><strong>Quick Links</strong><button onClick={() => scrollTo("home")}>Home</button><button onClick={() => scrollTo("about")}>About</button><button onClick={() => scrollTo("rooms")}>Rooms</button><button onClick={() => scrollTo("facilities")}>Facilities</button><button onClick={() => scrollTo("experiences")}>Experiences</button><button onClick={() => scrollTo("attractions")}>Attractions</button><button onClick={() => scrollTo("reviews")}>Guest Reviews</button><button onClick={() => scrollTo("patio")}>Open Patio</button><button onClick={() => scrollTo("gallery")}>Gallery</button><button onClick={() => scrollTo("contact")}>Contact</button><button onClick={() => window.location.href = "/admin/login"}>Staff & Admin Portal</button></div><div className="footer-contact"><strong>Contact Us</strong><a href="tel:+918400095434"><Phone size={13} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={13} /> +91 93369 41261</a><a href="mailto:Info@casanesthomestay.in"><Send size={13} /> Info@casanesthomestay.in</a><a href="https://maps.google.com/?q=B23/33+Plot+58,+Gurudham+Colony,+Near+PMO+Office,+Varanasi" target="_blank" rel="noreferrer"><MapPin size={13} /> B23/33 Plot 58, Gurudham Colony (Near PMO Office), Varanasi</a><div className="socials"><a href="https://www.instagram.com/casa_nest__?stkn=eWU0M3Ryb3lvZjkx&utm_source=qr" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div className="footer-newsletter"><strong>Newsletter</strong><p>Get updates, offers and travel stories.</p><form onSubmit={(event) => { event.preventDefault(); setToast("You’re on the Casa Nest list. Welcome in."); }}><input type="email" aria-label="Email address" placeholder="Enter your email" required /><button type="submit" aria-label="Subscribe"><ArrowRight size={15} /></button></form></div></div><div className="container footer-bottom"><span>© 2025 Casa Nest. All rights reserved.</span><div><button onClick={() => setToast("Privacy is part of feeling at home.")}>Privacy Policy</button><button onClick={() => setToast("Terms coming soon.")}>Terms & Conditions</button><button onClick={() => window.location.href = "/admin/login"}>Admin Login</button></div></div></footer>
       {/* Lightbox / Full Photo Viewer */}
       {selectedImageIndex !== null && displayGallery[selectedImageIndex] && (
         <div
@@ -2059,10 +2038,14 @@ export default function Home() {
         isOpen={!!selectedDetailRoom}
         onClose={() => setSelectedDetailRoom(null)}
         onBookRoom={(roomId) => {
-          setSelectedRoomId(roomId);
+          setSelectedRoomIds([roomId]);
           scrollTo("booking");
         }}
       />
     </div>
   );
 }
+
+
+
+

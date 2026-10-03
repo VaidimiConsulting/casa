@@ -27,41 +27,7 @@ export async function initReviewsTable() {
 
     const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM reviews");
     if (rows[0].count === 0) {
-      const initialReviews = [
-        {
-          customer_name: "Riya Sharma",
-          customer_email: "riya.sharma@example.com",
-          rating: 5,
-          review: "Felt like home from the very first moment. Beautiful ambience, clean rooms with swan origami, and amazing hospitality in Varanasi!",
-          room_name: "Room 101 — Casa Luz (House of Light)",
-          is_approved: 1,
-        },
-        {
-          customer_name: "Amit Verma",
-          customer_email: "amit.verma@example.com",
-          rating: 5,
-          review: "The peaceful serene vibe inside Kashi is just magical. Peaceful, extremely safe, and the open rooftop patio was wonderful.",
-          room_name: "Room 102 — Casa Sereno (Calm & Peaceful)",
-          is_approved: 1,
-        },
-        {
-          customer_name: "Sneha Iyer",
-          customer_email: "sneha.iyer@example.com",
-          rating: 5,
-          review: "Perfect blend of comfort, culture, and calm. Handcrafted teak furniture and very supportive host team. Highly recommended!",
-          room_name: "Room 104 — Casa Amore (Romantic & Cozy)",
-          is_approved: 1,
-        },
-      ];
-
-      for (const r of initialReviews) {
-        await pool.query(
-          `INSERT INTO reviews (customer_name, customer_email, rating, review, room_name, is_approved)
-           VALUES (?, ?, ?, ?, ?, ?)`,
-          [r.customer_name, r.customer_email, r.rating, r.review, r.room_name, r.is_approved]
-        );
-      }
-      console.log("⭐ Seeded initial verified guest reviews.");
+      console.log("⭐ Reviews table is ready.");
     }
   } catch (err) {
     console.error("Reviews table init error:", err);
@@ -147,3 +113,4 @@ export async function deleteReview(req: Request, res: Response): Promise<void> {
     res.status(500).json({ success: false, message: "Internal server error." });
   }
 }
+

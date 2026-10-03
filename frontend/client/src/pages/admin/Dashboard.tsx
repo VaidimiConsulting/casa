@@ -93,6 +93,9 @@ export default function Dashboard() {
     todayCheckOuts: 0,
     todayOrders: 0,
     todayRevenue: 0,
+    weekRevenue: 0,
+    monthRevenue: 0,
+    monthCustomers: 0,
     todayBookingRevenue: 0,
     todayOrderRevenue: 0,
     totalBookingRevenue: 0,
@@ -202,11 +205,31 @@ export default function Dashboard() {
             onClick={() => setActiveStatModal("today_revenue")}
           />
           <StatCard
+            title="This Week's Revenue"
+            value={`₹${stats.weekRevenue.toLocaleString()}`}
+            icon={IndianRupee}
+            subtitle="Room bookings this week"
+            onClick={() => setActiveStatModal("total_revenue")}
+          />
+          <StatCard
+            title="This Month's Revenue"
+            value={`₹${stats.monthRevenue.toLocaleString()}`}
+            icon={TrendingUp}
+            subtitle="Room bookings this month"
+            onClick={() => setActiveStatModal("total_revenue")}
+          />
+          <StatCard
             title="Total Room Revenue"
             value={`₹${(totalPaidRevenue || stats.totalBookingRevenue || stats.totalRevenue).toLocaleString()}`}
             icon={TrendingUp}
             subtitle="Lifetime reservations revenue"
             onClick={() => setActiveStatModal("total_revenue")}
+          />
+          <StatCard
+            title="Monthly Customers"
+            value={stats.monthCustomers}
+            icon={User}
+            subtitle="Unique guests this month"
           />
           <StatCard
             title="Pending Requests"

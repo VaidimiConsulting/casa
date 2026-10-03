@@ -10,6 +10,9 @@ export interface Booking {
   check_in: string;
   check_out: string;
   guests: number;
+  males?: number;
+  females?: number;
+  children?: number;
   total_amount: number;
   status: "pending" | "confirmed" | "cancelled" | "completed";
   payment_status: "pending" | "paid" | "failed" | "refunded";
@@ -27,14 +30,18 @@ export interface Booking {
 }
 
 export interface BookingData {
-  room_id?: number | null;
+  room_id?: number | number[] | null;
   guest_name: string;
   guest_email: string;
   guest_phone?: string;
   check_in: string;
   check_out: string;
-  guests: number;
+  guests?: number;
+  males?: number;
+  females?: number;
+  children?: number;
   notes?: string;
+  payment_method?: string;
 }
 
 export interface BookingResponse {

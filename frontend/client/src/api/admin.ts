@@ -10,6 +10,9 @@ export interface DashboardStats {
   todayCheckOuts: number;
   todayOrders: number;
   todayRevenue: number;
+  weekRevenue: number;
+  monthRevenue: number;
+  monthCustomers: number;
   todayBookingRevenue: number;
   todayOrderRevenue: number;
   totalBookingRevenue: number;
