@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import BreakfastMenuModal from "./BreakfastMenuModal";
 import {
   X,
   BedDouble,
@@ -93,6 +94,7 @@ export default function RoomDetailModal({
   onBookRoom,
 }: RoomDetailModalProps) {
   const [activeImageIndex, setActiveImageIndex] = useState(0);
+  const [isBreakfastMenuOpen, setIsBreakfastMenuOpen] = useState(false);
 
   useEffect(() => {
     setActiveImageIndex(0);
@@ -289,6 +291,11 @@ export default function RoomDetailModal({
                     <div>
                       <strong className="text-xs text-[#20352b] block">{amenity.name}</strong>
                       <span className="text-[11px] text-[#77766c] block leading-tight">{amenity.desc}</span>
+                      {amenity.name === "Complimentary Breakfast" && (
+                        <button onClick={() => setIsBreakfastMenuOpen(true)} className="mt-1.5 text-[10px] uppercase font-bold tracking-wider text-[#c8a36a] hover:text-[#20352b] transition-colors underline decoration-dotted underline-offset-2">
+                          View Menu
+                        </button>
+                      )}
                     </div>
                   </div>
                 );
@@ -321,6 +328,11 @@ export default function RoomDetailModal({
           </div>
         </div>
       </div>
+      <BreakfastMenuModal isOpen={isBreakfastMenuOpen} onClose={() => setIsBreakfastMenuOpen(false)} />
     </div>
   );
 }
+
+
+
+
