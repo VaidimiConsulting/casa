@@ -60,13 +60,14 @@ export async function createBooking(req: Request, res: Response): Promise<void> 
       males = 0,
       females = 0,
       children = 0,
+      guests,
       notes,
     } = req.body;
 
     const parsedMales = parseInt(males) || 0;
     const parsedFemales = parseInt(females) || 0;
     const parsedChildren = parseInt(children) || 0;
-    const parsedGuests = parsedMales + parsedFemales + parsedChildren;
+    const parsedGuests = guests ? parseInt(guests) : (parsedMales + parsedFemales + parsedChildren);
 
     // 1. Validate Guest Name
     if (!guest_name || typeof guest_name !== "string" || guest_name.trim().length < 2) {
@@ -422,7 +423,7 @@ export async function getRoomBookedDates(req: Request, res: Response): Promise<v
       `SELECT check_in, check_out, status 
        FROM bookings 
        WHERE room_id = ? 
-         AND status IN ('pending', 'confirmed')
+         AND (status = 'confirmed' OR payment_status = 'paid')
          AND check_out >= CURDATE()
        ORDER BY check_in ASC`,
       [roomId]

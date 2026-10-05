@@ -288,7 +288,7 @@ export default function Home() {
   const [confirmedEnquiry, setConfirmedEnquiry] = useState<any>(null);
   const [bookingLoading, setBookingLoading] = useState(false);
   const [toast, setToast] = useState("");
-  const [childrenVal, setChildrenVal] = useState(0);
+  const [guestsVal, setGuestsVal] = useState(1);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [displayRooms, setDisplayRooms] = useState(rooms);
   const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([1]);
@@ -632,7 +632,7 @@ export default function Home() {
       return;
     }
 
-    
+
     if (selectedRoomIds.length === 0) {
       setToast("Please select at least one room.");
       return;
@@ -651,8 +651,8 @@ export default function Home() {
         guest_email: emailVal,
         check_in: checkInVal,
         check_out: checkOutVal,
-        guests: displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0),
-        room_id: selectedRoomIds, males: 0, females: 0, children: childrenVal, payment_method: paymentMethod,
+        guests: guestsVal,
+        room_id: selectedRoomIds, males: 0, females: 0, children: 0, payment_method: paymentMethod,
         notes: roomRef.current?.selectedOptions[0]?.text
           ? `Room preference: ${roomRef.current.selectedOptions[0].text}`
           : undefined,
@@ -670,7 +670,7 @@ export default function Home() {
         guest_email: emailVal,
         check_in: checkInVal,
         check_out: checkOutVal,
-        guests: displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0),
+        guests: guestsVal,
         total_amount: rawPrice * nights,
         status: "pending",
         payment_status: "pending",
@@ -1181,7 +1181,7 @@ export default function Home() {
                       {place.desc}
                     </p>
                   </div>
-                  
+
                   <div className="mt-4 pt-3 border-t border-[#20352b]/10 flex items-center justify-between">
                     <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
                       <CheckCircle2 size={11} /> Easy Cab / Auto Access
@@ -1364,11 +1364,11 @@ export default function Home() {
                     loading="lazy"
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent pointer-events-none" />
-                  
+
                   {/* Floating Highlight Badge */}
                   <div className="absolute top-4 left-4 px-3.5 py-1.5 rounded-full bg-[#fbf8f1]/95 backdrop-blur-xs text-[#20352b] text-xs font-semibold shadow-md flex items-center gap-1.5 border border-[#20352b]/10">
                     <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping" />
-                    <span>Capacity: 30 to 40 Members</span>
+                    <span>Capacity: 12 to 18 Members</span>
                   </div>
 
                   <div className="absolute bottom-6 left-6 right-6 text-white space-y-1">
@@ -1407,11 +1407,10 @@ export default function Home() {
                       setGalleryFilter(cat);
                       if (cat !== "All") setIsGalleryExpanded(true);
                     }}
-                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${
-                      galleryFilter === cat
+                    className={`px-3.5 py-1.5 rounded-full text-xs font-medium transition-all ${galleryFilter === cat
                         ? "bg-[#20352b] text-[#fbf8f1] shadow-xs"
                         : "bg-[#fbf8f1] text-[#20352b] border border-[#20352b]/15 hover:bg-[#efe8dc]"
-                    }`}
+                      }`}
                   >
                     {cat}
                   </button>
@@ -1430,7 +1429,23 @@ export default function Home() {
                     onClick={() => setSelectedImageIndex(activeIdx)}
                     aria-label={`Open ${item.alt}`}
                   >
-                    <img src={item.image} alt={item.alt} loading="lazy" />
+                    {item.image.match(/\.(mp4|webm|mov)$/i) ? (
+                      <video
+                        src={item.image}
+                        className="w-full h-full object-cover transition-transform duration-500 hover:scale-105"
+                        muted
+                        loop
+                        playsInline
+                        onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
+                        onMouseOut={(e) => {
+                          const v = e.target as HTMLVideoElement;
+                          v.pause();
+                          v.currentTime = 0;
+                        }}
+                      />
+                    ) : (
+                      <img src={item.image} alt={item.alt} loading="lazy" />
+                    )}
                     <span className="gallery-overlay">
                       <span>{item.alt || "View moment"}</span>
                       <ArrowUpRight size={17} />
@@ -1519,43 +1534,43 @@ export default function Home() {
             </div>
 
             {/* Featured Testimonial Spotlight */}`n            {allTestimonials.length > 0 ? (
-            <div className="testimonials-wrap mb-12">
-              <div className="testimonial-stage" onMouseEnter={() => setTestimonialPaused(true)} onMouseLeave={() => setTestimonialPaused(false)}>
-                <button className="carousel-arrow left" aria-label="Previous testimonial" onClick={() => setActiveTestimonial((activeTestimonial - 1 + allTestimonials.length) % allTestimonials.length)}>
-                  <ChevronLeft size={16} />
-                </button>
-                <div className="testimonial-card">
-                  <Quote className="quote-icon" size={26} />
-                  <div className="stars" aria-label={`${activeReview?.rating || 5} out of 5 stars`}>
-                    {Array.from({ length: 5 }).map((_, index) => (
-                      <Star
-                        key={index}
-                        size={16}
-                        className={index < (activeReview?.rating || 5) ? "fill-[#c8a36a] text-[#c8a36a]" : "text-[#77766c]/30"}
-                      />
-                    ))}
+              <div className="testimonials-wrap mb-12">
+                <div className="testimonial-stage" onMouseEnter={() => setTestimonialPaused(true)} onMouseLeave={() => setTestimonialPaused(false)}>
+                  <button className="carousel-arrow left" aria-label="Previous testimonial" onClick={() => setActiveTestimonial((activeTestimonial - 1 + allTestimonials.length) % allTestimonials.length)}>
+                    <ChevronLeft size={16} />
+                  </button>
+                  <div className="testimonial-card">
+                    <Quote className="quote-icon" size={26} />
+                    <div className="stars" aria-label={`${activeReview?.rating || 5} out of 5 stars`}>
+                      {Array.from({ length: 5 }).map((_, index) => (
+                        <Star
+                          key={index}
+                          size={16}
+                          className={index < (activeReview?.rating || 5) ? "fill-[#c8a36a] text-[#c8a36a]" : "text-[#77766c]/30"}
+                        />
+                      ))}
+                    </div>
+                    <blockquote>“{activeReview?.quote}”</blockquote>
+                    <div className="guest">
+                      <span className="guest-avatar">{activeReview?.initials}</span>
+                      <span><strong>{activeReview?.name}</strong><small>{activeReview?.city}</small></span>
+                    </div>
                   </div>
-                  <blockquote>“{activeReview?.quote}”</blockquote>
-                  <div className="guest">
-                    <span className="guest-avatar">{activeReview?.initials}</span>
-                    <span><strong>{activeReview?.name}</strong><small>{activeReview?.city}</small></span>
-                  </div>
+                  <button className="carousel-arrow right" aria-label="Next testimonial" onClick={() => setActiveTestimonial((activeTestimonial + 1) % allTestimonials.length)}>
+                    <ChevronRight size={16} />
+                  </button>
                 </div>
-                <button className="carousel-arrow right" aria-label="Next testimonial" onClick={() => setActiveTestimonial((activeTestimonial + 1) % allTestimonials.length)}>
-                  <ChevronRight size={16} />
-                </button>
+                <div className="testimonial-dots">
+                  {allTestimonials.map((review, index) => (
+                    <button
+                      key={`${review.name}-${index}`}
+                      className={index === activeTestimonial ? "active" : ""}
+                      aria-label={`Show testimonial ${index + 1}`}
+                      onClick={() => setActiveTestimonial(index)}
+                    />
+                  ))}
+                </div>
               </div>
-              <div className="testimonial-dots">
-                {allTestimonials.map((review, index) => (
-                  <button
-                    key={`${review.name}-${index}`}
-                    className={index === activeTestimonial ? "active" : ""}
-                    aria-label={`Show testimonial ${index + 1}`}
-                    onClick={() => setActiveTestimonial(index)}
-                  />
-                ))}
-              </div>
-            </div>
             ) : (
               <div className="text-center p-12 bg-white rounded-3xl border border-[#20352b]/10 shadow-sm mb-12">
                 <p className="text-[#77766c]">No reviews yet. Be the first to share your experience!</p>
@@ -1586,11 +1601,11 @@ export default function Home() {
                 {liveReviews.slice(0, 3).map((rev: any) => {
                   const initials = rev.customer_name
                     ? rev.customer_name
-                        .split(" ")
-                        .map((n: string) => n[0])
-                        .join("")
-                        .slice(0, 2)
-                        .toUpperCase()
+                      .split(" ")
+                      .map((n: string) => n[0])
+                      .join("")
+                      .slice(0, 2)
+                      .toUpperCase()
                     : "CN";
 
                   return (
@@ -1678,116 +1693,110 @@ export default function Home() {
 
         <section className="stay-banner"><img src={images.stay} alt="Quiet sitting room overlooking greenery" loading="lazy" /><div className="stay-overlay" /><div className="container stay-content"><div><span className="eyebrow">A little more time for yourself</span><h2>Your peaceful stay<br /><em>awaits.</em></h2></div><button className="button button-light" onClick={() => scrollTo("booking")}>Book your stay<ArrowRight size={15} /></button></div></section>
 
-        <section id="booking" className="booking-section section-pad"><div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Thank you for reaching out.</h3><p>We’ve received your stay enquiry and will reply soon. You can also view it anytime in your My Bookings portal.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row" style={{ alignItems: 'flex-start' }}>
-<label>
-  Room(s) 
-  <div className="relative w-full" ref={roomDropdownRef}>
-        <div 
-          onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
-          style={{
-            padding: '0 12px',
-            minHeight: '44px',
-            backgroundColor: '#f5f0e8',
-            border: '1px solid rgba(32, 53, 43, 0.13)',
-            borderRadius: '2px',
-            cursor: 'pointer',
-            display: 'flex',
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            fontFamily: "'DM Sans', sans-serif",
-            fontSize: '12px',
-            letterSpacing: '0',
-            textTransform: 'none',
-            color: '#20352b'
-          }}
-        >
-          <span>
-            {selectedRoomIds.length === 0 
-              ? "Select Rooms" 
-              : selectedRoomIds.length === 1 
-                ? displayRooms.find(r => r.id === selectedRoomIds[0])?.name || "1 Room Selected"
-                : `${selectedRoomIds.length} Rooms Selected`
-            }
-          </span>
-          <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isRoomDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><path d="m6 9 6 6 6-6"/></svg>
-        </div>
-        
-        {isRoomDropdownOpen && (
-          <div style={{
-            position: 'absolute',
-            top: '100%',
-            left: 0,
-            right: 0,
-            marginTop: '4px',
-            backgroundColor: '#fff',
-            border: '1px solid rgba(32, 53, 43, 0.15)',
-            borderRadius: '8px',
-            boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
-            zIndex: 50,
-            maxHeight: '220px',
-            overflowY: 'auto',
-            padding: '8px'
-          }}>
-            {displayRooms.map((r) => {
-              const cap = r.guests.includes("3") ? 3 : 2;
-              return (
-                <label key={r.id} style={{
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: '12px',
-                  padding: '8px',
+        <section id="booking" className="booking-section section-pad"><div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Booking Request Placed!</h3><p className="font-bold text-rose-800">Your booking is NOT confirmed yet!</p><p>Your booking will only be confirmed once you make the payment and receive a confirmation message from the Admin. Please call or WhatsApp the owner at <a href="https://wa.me/918400095434" target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline">+91 84000 95434</a> to confirm your reservation.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row" style={{ alignItems: 'flex-start' }}>
+          <label>
+            Room(s)
+            <div className="relative w-full" ref={roomDropdownRef}>
+              <div
+                onClick={() => setIsRoomDropdownOpen(!isRoomDropdownOpen)}
+                style={{
+                  padding: '0 12px',
+                  minHeight: '44px',
+                  backgroundColor: '#f5f0e8',
+                  border: '1px solid rgba(32, 53, 43, 0.13)',
+                  borderRadius: '2px',
                   cursor: 'pointer',
-                  borderRadius: '6px',
-                  transition: 'background 0.2s'
-                }} className="hover:bg-[#f5f0e8]">
-                  <input
-                    type="checkbox"
-                    value={r.id}
-                    checked={selectedRoomIds.includes(r.id)}
-                    onChange={(e) => {
-                      if (e.target.checked) {
-                        setSelectedRoomIds([...selectedRoomIds, r.id]);
-                      } else {
-                        setSelectedRoomIds(selectedRoomIds.filter(id => id !== r.id));
-                      }
-                    }}
-                    style={{
-                      width: '18px',
-                      height: '18px',
-                      margin: 0,
-                      cursor: 'pointer',
-                      accentColor: '#20352b'
-                    }}
-                  />
-                  <div style={{ display: 'flex', flexDirection: 'column' }}>
-                    <span style={{ fontSize: '14px', fontWeight: '500', color: '#20352b' }}>{r.name}</span>
-                    <span style={{ fontSize: '11px', color: '#77766c' }}>{r.badge} ({cap} Guests) — ₹{r.price.replace(/[^0-9,]/g, "")}/night</span>
-                  </div>
-                </label>
-              );
-            })}
-          </div>
-        )}
-      </div>
-</label>
-<div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
-  <label style={{ margin: 0 }}>
-        Adult Guests
-        <div style={{ padding: '0 12px', minHeight: '44px', display: 'flex', alignItems: 'center', backgroundColor: '#f5f0e8', borderRadius: '2px', border: '1px solid rgba(32, 53, 43, 0.13)', fontFamily: "'DM Sans', sans-serif", fontSize: '12px', letterSpacing: '0', textTransform: 'none', color: '#20352b' }}>
-          {displayRooms.filter(r => selectedRoomIds.includes(r.id)).reduce((acc, curr) => acc + (curr.guests.includes("3") ? 3 : 2), 0)} Adults (Fixed based on rooms)
-        </div>
-      </label>
-  <label style={{ margin: 0 }}>
-    Children (0-15 Yrs)
-    <div className="guest-control">
-      <button type="button" onClick={() => setChildrenVal((v) => Math.max(0, v - 1))}><Minus size={14} /></button>
-      <span>{childrenVal}</span>
-      <button type="button" onClick={() => setChildrenVal((v) => Math.min(2, v + 1))}><Plus size={14} /></button>
-    </div>
-  </label>
+                  display: 'flex',
+                  justifyContent: 'space-between',
+                  alignItems: 'center',
+                  fontFamily: "'DM Sans', sans-serif",
+                  fontSize: '12px',
+                  letterSpacing: '0',
+                  textTransform: 'none',
+                  color: '#20352b'
+                }}
+              >
+                <span>
+                  {selectedRoomIds.length === 0
+                    ? "Select Rooms"
+                    : selectedRoomIds.length === 1
+                      ? displayRooms.find(r => r.id === selectedRoomIds[0])?.name || "1 Room Selected"
+                      : `${selectedRoomIds.length} Rooms Selected`
+                  }
+                </span>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" style={{ transform: isRoomDropdownOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}><path d="m6 9 6 6 6-6" /></svg>
+              </div>
 
-</div>
-</div><label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
+              {isRoomDropdownOpen && (
+                <div style={{
+                  position: 'absolute',
+                  top: '100%',
+                  left: 0,
+                  right: 0,
+                  marginTop: '4px',
+                  backgroundColor: '#fff',
+                  border: '1px solid rgba(32, 53, 43, 0.15)',
+                  borderRadius: '8px',
+                  boxShadow: '0 4px 20px rgba(0,0,0,0.1)',
+                  zIndex: 50,
+                  maxHeight: '220px',
+                  overflowY: 'auto',
+                  padding: '8px'
+                }}>
+                  {displayRooms.map((r) => {
+                    const cap = r.guests.includes("3") ? 3 : 2;
+                    return (
+                      <label key={r.id} style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '12px',
+                        padding: '8px',
+                        cursor: 'pointer',
+                        borderRadius: '6px',
+                        transition: 'background 0.2s'
+                      }} className="hover:bg-[#f5f0e8]">
+                        <input
+                          type="checkbox"
+                          value={r.id}
+                          checked={selectedRoomIds.includes(r.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedRoomIds([...selectedRoomIds, r.id]);
+                            } else {
+                              setSelectedRoomIds(selectedRoomIds.filter(id => id !== r.id));
+                            }
+                          }}
+                          style={{
+                            width: '18px',
+                            height: '18px',
+                            margin: 0,
+                            cursor: 'pointer',
+                            accentColor: '#20352b'
+                          }}
+                        />
+                        <div style={{ display: 'flex', flexDirection: 'column' }}>
+                          <span style={{ fontSize: '14px', fontWeight: '500', color: '#20352b' }}>{r.name}</span>
+                          <span style={{ fontSize: '11px', color: '#77766c' }}>{r.badge} ({cap} Guests) — ₹{r.price.replace(/[^0-9,]/g, "")}/night</span>
+                        </div>
+                      </label>
+                    );
+                  })}
+                </div>
+              )}
+            </div>
+          </label>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px', width: '100%' }}>
+            <label style={{ margin: 0 }}>
+              Number of Guests
+              <div className="guest-control">
+                <button type="button" onClick={() => setGuestsVal((v) => Math.max(1, v - 1))}><Minus size={14} /></button>
+                <span>{guestsVal} {guestsVal === 1 ? "Guest" : "Guests"}</span>
+                <button type="button" onClick={() => setGuestsVal((v) => Math.min(10, v + 1))}><Plus size={14} /></button>
+              </div>
+            </label>
+
+          </div>
+        </div><label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
 
         <section id="contact" className="section-pad section-soft">
           <div className="container">
@@ -1942,7 +1951,7 @@ export default function Home() {
       <EnquirySlipModal enquiry={confirmedEnquiry} isOpen={isEnquiryModalOpen} onClose={() => setIsEnquiryModalOpen(false)} />
 
       <footer className="site-footer"><div className="container footer-grid"><div className="footer-brand"><BrandMark light /><p>Stay different.<br />Feel at home.</p><span className="footer-leaf" aria-hidden="true">⌁</span></div><div className="footer-links"><strong>Quick Links</strong><button onClick={() => scrollTo("home")}>Home</button><button onClick={() => scrollTo("about")}>About</button><button onClick={() => scrollTo("rooms")}>Rooms</button><button onClick={() => scrollTo("facilities")}>Facilities</button><button onClick={() => scrollTo("experiences")}>Experiences</button><button onClick={() => scrollTo("attractions")}>Attractions</button><button onClick={() => scrollTo("reviews")}>Guest Reviews</button><button onClick={() => scrollTo("patio")}>Open Patio</button><button onClick={() => scrollTo("gallery")}>Gallery</button><button onClick={() => scrollTo("contact")}>Contact</button>
-            <button onClick={() => setIsBreakfastMenuOpen(true)}>Breakfast Menu</button><button onClick={() => window.location.href = "/admin/login"}>Staff & Admin Portal</button></div><div className="footer-contact"><strong>Contact Us</strong><a href="tel:+918400095434"><Phone size={13} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={13} /> +91 93369 41261</a><a href="mailto:Info@casanesthomestay.in"><Send size={13} /> Info@casanesthomestay.in</a><a href="https://maps.google.com/?q=B23/33+Plot+58,+Gurudham+Colony,+Near+PMO+Office,+Varanasi" target="_blank" rel="noreferrer"><MapPin size={13} /> B23/33 Plot 58, Gurudham Colony (Near PMO Office), Varanasi</a><div className="socials"><a href="https://www.instagram.com/casa_nest__?stkn=eWU0M3Ryb3lvZjkx&utm_source=qr" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div className="footer-newsletter"><strong>Newsletter</strong><p>Get updates, offers and travel stories.</p><form onSubmit={(event) => { event.preventDefault(); setToast("You’re on the Casa Nest list. Welcome in."); }}><input type="email" aria-label="Email address" placeholder="Enter your email" required /><button type="submit" aria-label="Subscribe"><ArrowRight size={15} /></button></form></div></div><div className="container footer-bottom"><span>© 2025 Casa Nest. All rights reserved.</span><div><button onClick={() => setToast("Privacy is part of feeling at home.")}>Privacy Policy</button><button onClick={() => setToast("Terms coming soon.")}>Terms & Conditions</button><button onClick={() => window.location.href = "/admin/login"}>Admin Login</button></div></div></footer>
+        <button onClick={() => setIsBreakfastMenuOpen(true)}>Breakfast Menu</button><button onClick={() => window.location.href = "/admin/login"}>Staff & Admin Portal</button></div><div className="footer-contact"><strong>Contact Us</strong><a href="tel:+918400095434"><Phone size={13} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={13} /> +91 93369 41261</a><a href="mailto:Info@casanesthomestay.in"><Send size={13} /> Info@casanesthomestay.in</a><a href="https://maps.google.com/?q=B23/33+Plot+58,+Gurudham+Colony,+Near+PMO+Office,+Varanasi" target="_blank" rel="noreferrer"><MapPin size={13} /> B23/33 Plot 58, Gurudham Colony (Near PMO Office), Varanasi</a><div className="socials"><a href="https://www.instagram.com/casa_nest__?stkn=eWU0M3Ryb3lvZjkx&utm_source=qr" target="_blank" rel="noreferrer" aria-label="Instagram"><Instagram size={16} /></a><a href="https://facebook.com" target="_blank" rel="noreferrer" aria-label="Facebook"><Facebook size={16} /></a><a href="https://youtube.com" target="_blank" rel="noreferrer" aria-label="YouTube"><Youtube size={16} /></a></div></div><div className="footer-newsletter"><strong>Newsletter</strong><p>Get updates, offers and travel stories.</p><form onSubmit={(event) => { event.preventDefault(); setToast("You’re on the Casa Nest list. Welcome in."); }}><input type="email" aria-label="Email address" placeholder="Enter your email" required /><button type="submit" aria-label="Subscribe"><ArrowRight size={15} /></button></form></div></div><div className="container footer-bottom"><span>© 2025 Casa Nest. All rights reserved.</span><div><button onClick={() => setToast("Privacy is part of feeling at home.")}>Privacy Policy</button><button onClick={() => setToast("Terms coming soon.")}>Terms & Conditions</button><button onClick={() => window.location.href = "/admin/login"}>Admin Login</button></div></div></footer>
       {/* Lightbox / Full Photo Viewer */}
       {selectedImageIndex !== null && displayGallery[selectedImageIndex] && (
         <div
@@ -1992,11 +2001,21 @@ export default function Home() {
             className="relative max-w-4xl max-h-[88vh] flex flex-col items-center"
             onClick={(e) => e.stopPropagation()}
           >
-            <img
-              src={displayGallery[selectedImageIndex].image}
-              alt={displayGallery[selectedImageIndex].alt}
-              className="max-w-full max-h-[74vh] object-contain rounded-xl shadow-2xl border border-white/10"
-            />
+            {displayGallery[selectedImageIndex].image.match(/\.(mp4|webm|mov)$/i) ? (
+              <video
+                src={displayGallery[selectedImageIndex].image}
+                className="max-w-full max-h-[74vh] object-contain rounded-xl shadow-2xl border border-white/10"
+                controls
+                autoPlay
+                playsInline
+              />
+            ) : (
+              <img
+                src={displayGallery[selectedImageIndex].image}
+                alt={displayGallery[selectedImageIndex].alt}
+                className="max-w-full max-h-[74vh] object-contain rounded-xl shadow-2xl border border-white/10"
+              />
+            )}
             <div className="mt-3 text-center px-5 py-2.5 rounded-xl bg-black/75 backdrop-blur-md text-white max-w-xl shadow-lg border border-white/10">
               <div className="flex items-center justify-center gap-2 text-xs text-[#c8a36a] font-semibold mb-1">
                 <span className="uppercase tracking-wider font-mono text-[10px]">

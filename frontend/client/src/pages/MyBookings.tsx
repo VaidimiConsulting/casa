@@ -795,10 +795,11 @@ export default function MyBookings() {
                 </div>
                 <div>
                   <h3 className="font-serif text-2xl sm:text-3xl font-bold text-[#1a2f23]">
-                    Booking Reserved & Voucher Ready!
+                    Booking Request Placed!
                   </h3>
+                  <p className="font-bold text-rose-800 text-sm mt-1">Your booking is NOT confirmed yet!</p>
                   <p className="text-xs sm:text-sm text-[#4d544a] max-w-md mx-auto leading-relaxed mt-1">
-                    Aapki reservation request successfully register ho gayi hai (Booking #{newlyCreatedBooking?.id}). Niche diye gaye button par click karke apna official booking slip / PDF invoice download karein.
+                    Your booking will only be confirmed once you make the payment and receive a confirmation message from the Admin. <strong>Please call or WhatsApp the owner at <a href="https://wa.me/918400095434" target="_blank" rel="noreferrer" className="text-emerald-700 underline">+91 84000 95434</a> to confirm your booking.</strong> Niche diye gaye button par click karke apna official booking slip / PDF invoice download karein.
                   </p>
                 </div>
 

@@ -16,18 +16,20 @@ export interface FinanceSummary {
   netIncome: number;
 }
 
-export async function getFinanceSummary(month?: number, year?: number) {
+export async function getFinanceSummary(month?: number, year?: number, day?: number | "") {
   const params: any = {};
   if (month) params.month = month;
   if (year) params.year = year;
-  const response = await api.get<{ success: boolean; summary: FinanceSummary; month: number; year: number }>("/finance/summary", { params });
+  if (day) params.day = day;
+  const response = await api.get<{ success: boolean; summary: FinanceSummary; month: number; year: number; day?: number }>("/finance/summary", { params });
   return response.data;
 }
 
-export async function getExpenses(month?: number, year?: number) {
+export async function getExpenses(month?: number, year?: number, day?: number | "") {
   const params: any = {};
   if (month) params.month = month;
   if (year) params.year = year;
+  if (day) params.day = day;
   const response = await api.get<{ success: boolean; expenses: Expense[] }>("/finance/expenses", { params });
   return response.data.expenses;
 }

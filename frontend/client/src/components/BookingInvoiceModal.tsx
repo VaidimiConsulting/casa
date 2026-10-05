@@ -54,7 +54,7 @@ export default function BookingInvoiceModal({ booking, isOpen, onClose }: Bookin
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:static print:inset-auto print:p-0 print:bg-white print:overflow-visible print:block">
       {/* Container */}
       <div className="relative w-full max-w-3xl bg-[#fbf8f1] rounded-3xl shadow-2xl border border-[#20352b]/15 overflow-hidden my-6 print:m-0 print:border-none print:shadow-none print:w-full print:rounded-none">
         
@@ -299,6 +299,17 @@ export default function BookingInvoiceModal({ booking, isOpen, onClose }: Bookin
               </span>
             </div>
           </div>
+
+          {/* ACTION REQUIRED: WHATSAPP CONFIRMATION */}
+          {booking.status === "pending" && !isPaid && (
+            <div className="p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-900 flex flex-col sm:flex-row items-center gap-3">
+              <AlertTriangle size={24} className="text-amber-600 shrink-0" />
+              <div className="text-xs">
+                <span className="font-bold block text-sm mb-0.5 text-rose-800">Your Booking is NOT Confirmed Yet!</span>
+                Your booking request is received but pending. Your booking will only be confirmed once you make the payment and receive a confirmation message from the Admin. Please call or WhatsApp the owner at <a href="https://wa.me/918400095434" target="_blank" rel="noreferrer" className="font-bold underline text-emerald-700">+91 84000 95434</a> to confirm your reservation.
+              </div>
+            </div>
+          )}
 
           {/* IMPORTANT NOTICE & TERMS & CONDITIONS SECTION */}
           <div className="p-4 sm:p-5 rounded-2xl bg-[#fef6e7] border-2 border-[#e6b35a]/50 text-xs text-[#20352b] space-y-2.5 shadow-2xs">

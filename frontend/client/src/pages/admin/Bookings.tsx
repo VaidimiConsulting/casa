@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Eye, Edit3, Trash2, Calendar, User, Mail, Phone, Moon, CreditCard, Sparkles, Printer, Receipt, CheckCircle2, Clock } from "lucide-react";
+import { Eye, Edit3, Trash2, Calendar, User, Mail, Phone, Moon, CreditCard, Sparkles, Printer, Receipt, CheckCircle2, Clock, MessageCircle } from "lucide-react";
 import AdminLayout from "@/components/admin/AdminLayout";
 import DataTable, { Column } from "@/components/admin/DataTable";
 import StatusBadge from "@/components/admin/StatusBadge";
@@ -157,6 +157,17 @@ export default function Bookings() {
           >
             <Receipt size={15} />
           </button>
+          {b.guest_phone && (
+            <a
+              href={`https://wa.me/${b.guest_phone.replace(/\D/g, "")}?text=${encodeURIComponent(`Hello ${b.guest_name},\n\nYour booking at Casa Nest Homestay is confirmed!\n\nBooking ID: #CN-${String(b.id).padStart(4, "0")}\nRoom: ${b.room_name || "Casa Nest Room"}\nCheck-in: ${new Date(b.check_in).toLocaleDateString()}\nCheck-out: ${new Date(b.check_out).toLocaleDateString()}\n\nWe look forward to hosting you. For any questions, reply to this message.`)}`}
+              target="_blank"
+              rel="noreferrer"
+              className="p-1.5 rounded-lg text-emerald-600 hover:bg-emerald-50 transition-colors"
+              title="Notify via WhatsApp"
+            >
+              <MessageCircle size={15} />
+            </a>
+          )}
           <button
             onClick={() => handleOpenDetails(b)}
             className="p-1.5 rounded-lg text-[#20352b] hover:bg-[#20352b]/8 transition-colors"

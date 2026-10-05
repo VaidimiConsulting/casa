@@ -358,8 +358,7 @@ export async function updateRoom(req: Request, res: Response): Promise<void> {
     const updatedName = name !== undefined ? name : existing.name;
     const updatedDescription = description !== undefined ? description : existing.description;
     const updatedRoomType = room_type !== undefined ? room_type : existing.room_type;
-    // Room price is fixed by policy and cannot be altered
-    const updatedPrice = FIXED_ROOM_PRICES[Number(id)] || existing.price_per_night;
+    const updatedPrice = price_per_night !== undefined ? Number(price_per_night) : existing.price_per_night;
     const updatedCapacity = capacity !== undefined ? Number(capacity) : existing.capacity;
     const updatedAmenities = amenities !== undefined 
       ? (Array.isArray(amenities) ? JSON.stringify(amenities) : amenities)

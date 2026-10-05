@@ -393,12 +393,28 @@ export default function Gallery() {
                 >
                   {/* Image Container with strict fixed aspect ratio */}
                   <div className="relative aspect-[4/3] bg-[#20352b]/5 overflow-hidden">
-                    <img
-                      src={item.image_url}
-                      alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                      loading="lazy"
-                    />
+                    {item.image_url.match(/\.(mp4|webm|mov)$/i) ? (
+                      <video
+                        src={item.image_url}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        muted
+                        loop
+                        playsInline
+                        onMouseOver={(e) => (e.target as HTMLVideoElement).play()}
+                        onMouseOut={(e) => {
+                          const v = e.target as HTMLVideoElement;
+                          v.pause();
+                          v.currentTime = 0;
+                        }}
+                      />
+                    ) : (
+                      <img
+                        src={item.image_url}
+                        alt={item.title}
+                        className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                        loading="lazy"
+                      />
+                    )}
                     <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center gap-2">
                       <button
                         onClick={() => setPreviewImage(item.image_url)}
@@ -508,7 +524,11 @@ export default function Gallery() {
             >
               {previewUrl ? (
                 <div className="relative w-full max-h-48 rounded-xl overflow-hidden shadow-xs border border-[#20352b]/15">
+                {previewUrl.match(/\.(mp4|webm|mov)$/i) ? (
+                  <video src={previewUrl} className="w-full h-48 object-cover" controls autoPlay muted loop playsInline />
+                ) : (
                   <img src={previewUrl} alt="Preview" className="w-full h-48 object-cover" />
+                )}
                   <span className="absolute bottom-2 right-2 px-2.5 py-1 rounded-md bg-black/70 text-white text-[10px] font-mono">
                     Click to change photo
                   </span>
@@ -531,7 +551,7 @@ export default function Gallery() {
               <input
                 type="file"
                 ref={fileInputRef}
-                accept="image/jpeg,image/png,image/webp,image/avif"
+                accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime"
                 onChange={handleFileChange}
                 className="hidden"
               />
@@ -643,7 +663,11 @@ export default function Gallery() {
             >
               {editPreviewUrl ? (
                 <div className="relative w-full max-h-48 rounded-xl overflow-hidden shadow-xs border border-[#20352b]/15">
+                {editPreviewUrl.match(/\.(mp4|webm|mov)$/i) ? (
+                  <video src={editPreviewUrl} className="w-full h-44 object-cover" controls autoPlay muted loop playsInline />
+                ) : (
                   <img src={editPreviewUrl} alt="Edit Preview" className="w-full h-44 object-cover" />
+                )}
                   <span className="absolute bottom-2 right-2 px-2.5 py-1 rounded-md bg-black/75 text-white text-[10px] font-mono">
                     Click to replace photo from device
                   </span>
@@ -659,7 +683,7 @@ export default function Gallery() {
               <input
                 type="file"
                 ref={editFileInputRef}
-                accept="image/jpeg,image/png,image/webp,image/avif"
+                accept="image/jpeg,image/png,image/webp,image/avif,video/mp4,video/webm,video/quicktime"
                 onChange={handleEditFileChange}
                 className="hidden"
               />
@@ -777,7 +801,11 @@ export default function Gallery() {
           onClick={() => setPreviewImage(null)}
         >
           <div className="relative max-w-4xl max-h-[88vh] rounded-2xl overflow-hidden shadow-2xl">
-            <img src={previewImage} alt="Preview" className="w-full h-full object-contain" />
+            {previewImage.match(/\.(mp4|webm|mov)$/i) ? (
+              <video src={previewImage} className="w-full h-full object-contain" controls autoPlay playsInline />
+            ) : (
+              <img src={previewImage} alt="Preview" className="w-full h-full object-contain" />
+            )}
             <button
               onClick={() => setPreviewImage(null)}
               className="absolute top-4 right-4 w-9 h-9 rounded-full bg-black/60 text-white flex items-center justify-center hover:bg-black/90 transition-colors"

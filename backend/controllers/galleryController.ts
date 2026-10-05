@@ -31,14 +31,14 @@ const fileFilter = (
   file: Express.Multer.File,
   cb: multer.FileFilterCallback
 ) => {
-  const allowedTypes = /jpeg|jpg|png|webp|avif/;
+  const allowedTypes = /jpeg|jpg|png|webp|avif|mp4|webm|quicktime|mov/;
   const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
   const mimetype = allowedTypes.test(file.mimetype);
 
   if (extname && mimetype) {
     cb(null, true);
   } else {
-    cb(new Error("Only image files (JPG, PNG, WEBP, AVIF) are allowed."));
+    cb(new Error("Only images (JPG, PNG, WEBP, AVIF) and videos (MP4, WEBM, MOV) are allowed."));
   }
 };
 

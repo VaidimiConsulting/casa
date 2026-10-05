@@ -476,15 +476,14 @@ p { color: inherit; }
   #printable-receipt,
   #printable-receipt * {
     visibility: visible !important;
+    color: #1a2f23 !important;
   }
   .printable-invoice {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
-    padding: 18px 24px !important;
+    padding: 0 !important;
     background: #ffffff !important;
     color: #1a2f23 !important;
     box-shadow: none !important;
@@ -493,9 +492,7 @@ p { color: inherit; }
     print-color-adjust: exact;
   }
   #printable-receipt {
-    position: absolute;
-    left: 0;
-    top: 0;
+    position: static !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;

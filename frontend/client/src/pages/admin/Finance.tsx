@@ -13,6 +13,7 @@ export default function Finance() {
   const [expenses, setExpenses] = useState<Expense[]>([]);
   
   const currentDate = new Date();
+  const [day, setDay] = useState<number | "">("");
   const [month, setMonth] = useState(currentDate.getMonth() + 1);
   const [year, setYear] = useState(currentDate.getFullYear());
 
@@ -28,14 +29,14 @@ export default function Finance() {
 
   useEffect(() => {
     loadData();
-  }, [month, year]);
+  }, [day, month, year]);
 
   const loadData = async () => {
     try {
       setLoading(true);
       const [summaryData, expensesData] = await Promise.all([
-        getFinanceSummary(month, year),
-        getExpenses(month, year)
+        getFinanceSummary(month, year, day),
+        getExpenses(month, year, day)
       ]);
       setSummary(summaryData.summary);
       setExpenses(expensesData);
@@ -127,12 +128,27 @@ export default function Finance() {
     >
       <div className="space-y-6">
         {/* Month Selector */}
-        <div className="flex gap-4 items-center bg-white p-4 rounded-2xl shadow-sm border border-[#20352b]/10">
+        <div className="flex flex-wrap gap-4 items-center bg-white p-4 rounded-2xl shadow-sm border border-[#20352b]/10">
+          <div>
+            <label className="block text-xs text-[#50574d] font-semibold mb-1">Day</label>
+            <select 
+              value={day} 
+              onChange={(e) => setDay(e.target.value === "" ? "" : Number(e.target.value))}
+              className="px-3 py-2 border rounded-xl bg-gray-50 outline-none focus:ring-1 focus:ring-[#20352b]"
+            >
+              <option value="">All</option>
+              {Array.from({ length: new Date(year, month, 0).getDate() }).map((_, i) => (
+                <option key={i+1} value={i+1}>
+                  {i+1}
+                </option>
+              ))}
+            </select>
+          </div>
           <div>
             <label className="block text-xs text-[#50574d] font-semibold mb-1">Month</label>
             <select 
               value={month} 
-              onChange={(e) => setMonth(Number(e.target.value))}
+              onChange={(e) => { setMonth(Number(e.target.value)); setDay(""); }}
               className="px-3 py-2 border rounded-xl bg-gray-50 outline-none focus:ring-1 focus:ring-[#20352b]"
             >
               {Array.from({ length: 12 }).map((_, i) => (

@@ -23,15 +23,28 @@ export async function initFinanceTable(): Promise<void> {
 }
 
 // GET /api/finance/summary
-// Returns current month's income, expenses, and net income
+// Returns current month's/day's income, expenses, and net income
 export async function getFinanceSummary(req: Request, res: Response): Promise<void> {
   try {
-    const { month, year } = req.query;
+    const { month, year, day } = req.query;
     
     // Default to current month/year if not provided
     const currentDate = new Date();
     const targetMonth = month ? Number(month) : currentDate.getMonth() + 1;
     const targetYear = year ? Number(year) : currentDate.getFullYear();
+    const targetDay = day ? Number(day) : null;
+
+    let dateFilterBooking = "MONTH(created_at) = ? AND YEAR(created_at) = ?";
+    let dateFilterPayment = "MONTH(created_at) = ? AND YEAR(created_at) = ?";
+    let dateFilterExpense = "MONTH(expense_date) = ? AND YEAR(expense_date) = ?";
+    let params: any[] = [targetMonth, targetYear];
+
+    if (targetDay) {
+      dateFilterBooking += " AND DAY(created_at) = ?";
+      dateFilterPayment += " AND DAY(created_at) = ?";
+      dateFilterExpense += " AND DAY(expense_date) = ?";
+      params.push(targetDay);
+    }
 
     // 1. Calculate Income
     // 1a. Income from Bookings
@@ -39,17 +52,19 @@ export async function getFinanceSummary(req: Request, res: Response): Promise<vo
       `SELECT COALESCE(SUM(total_amount), 0) as total 
        FROM bookings 
        WHERE payment_status = 'paid' 
-       AND MONTH(created_at) = ? AND YEAR(created_at) = ?`,
-      [targetMonth, targetYear]
+       AND ${dateFilterBooking}`,
+      params
     );
+    const bookingIncome = Number((bookingRows as any[])[0]?.total || 0);
+
     // 1b. Income from Direct Payments (No booking associated)
     const [directPaymentRows] = await pool.query(
       `SELECT COALESCE(SUM(amount), 0) as total 
        FROM payments 
        WHERE booking_id IS NULL 
        AND status = 'paid' 
-       AND MONTH(created_at) = ? AND YEAR(created_at) = ?`,
-      [targetMonth, targetYear]
+       AND ${dateFilterPayment}`,
+      params
     );
     const directPaymentIncome = Number((directPaymentRows as any[])[0]?.total || 0);
 
@@ -59,8 +74,8 @@ export async function getFinanceSummary(req: Request, res: Response): Promise<vo
     const [expenseRows] = await pool.query(
       `SELECT COALESCE(SUM(amount), 0) as total_expense 
        FROM expenses 
-       WHERE MONTH(expense_date) = ? AND YEAR(expense_date) = ?`,
-      [targetMonth, targetYear]
+       WHERE ${dateFilterExpense}`,
+      params
     );
     const totalExpense = Number((expenseRows as any[])[0]?.total_expense || 0);
 
@@ -71,6 +86,7 @@ export async function getFinanceSummary(req: Request, res: Response): Promise<vo
       success: true,
       month: targetMonth,
       year: targetYear,
+      day: targetDay,
       summary: {
         totalIncome,
         totalExpense,
@@ -86,14 +102,24 @@ export async function getFinanceSummary(req: Request, res: Response): Promise<vo
 // GET /api/finance/expenses
 export async function getExpenses(req: Request, res: Response): Promise<void> {
   try {
-    const { month, year } = req.query;
+    const { month, year, day } = req.query;
     
     let sql = "SELECT * FROM expenses";
     const params: any[] = [];
+    let conditions: string[] = [];
 
     if (month && year) {
-      sql += " WHERE MONTH(expense_date) = ? AND YEAR(expense_date) = ?";
+      conditions.push("MONTH(expense_date) = ? AND YEAR(expense_date) = ?");
       params.push(Number(month), Number(year));
+      
+      if (day) {
+        conditions.push("DAY(expense_date) = ?");
+        params.push(Number(day));
+      }
+    }
+
+    if (conditions.length > 0) {
+      sql += " WHERE " + conditions.join(" AND ");
     }
 
     sql += " ORDER BY expense_date DESC, created_at DESC";
