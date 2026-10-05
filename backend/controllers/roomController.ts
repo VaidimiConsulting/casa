@@ -246,7 +246,7 @@ export async function getRooms(req: Request, res: Response): Promise<void> {
     const [bookingRows] = await pool.query(
       `SELECT id, room_id, guest_name, guest_email, guest_phone, check_in, check_out, status, payment_status, total_amount
        FROM bookings
-       WHERE status IN ('pending', 'confirmed')
+       WHERE (status = 'confirmed' OR payment_status = 'paid')
          AND check_out >= CURDATE()
        ORDER BY check_in ASC`
     );
@@ -290,7 +290,7 @@ export async function getRoomById(req: Request, res: Response): Promise<void> {
       `SELECT id, room_id, guest_name, guest_email, guest_phone, check_in, check_out, status, payment_status, total_amount
        FROM bookings
        WHERE room_id = ?
-         AND status IN ('pending', 'confirmed')
+         AND (status = 'confirmed' OR payment_status = 'paid')
          AND check_out >= CURDATE()
        ORDER BY check_in ASC`,
       [id]
