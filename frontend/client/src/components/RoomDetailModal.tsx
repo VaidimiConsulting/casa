@@ -77,7 +77,7 @@ const ROOM_GALLERY_COLLECTIONS: Record<string | number, { url: string; title: st
 };
 
 const STANDARD_ROOM_AMENITIES = [
-  { icon: BedDouble, name: "Solid Teakwood Bed", desc: "Plush pocket-spring mattress & crisp 300TC cotton linens" },
+  { icon: BedDouble, name: "Solid Engineeringwood Bed", desc: "Plush pocket-spring mattress & crisp 300TC cotton linens" },
   { icon: Wind, name: "Whisper-Quiet Lloyd AC", desc: "Energy-efficient silent climate control" },
   { icon: Wifi, name: "High-Speed Wi-Fi", desc: "Seamless 100+ Mbps connectivity for work & streaming" },
   { icon: Bath, name: "Attached Modern Bath", desc: "24/7 instant hot water geyser, rain shower & organic toiletries" },

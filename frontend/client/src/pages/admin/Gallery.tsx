@@ -279,7 +279,7 @@ export default function Gallery() {
             className="button button-dark px-4 py-2 text-xs flex items-center gap-1.5"
           >
             <Plus size={15} />
-            <span>Upload Photo</span>
+            <span>Upload Media</span>
           </button>
         </div>
       }
@@ -373,13 +373,13 @@ export default function Gallery() {
         ) : filteredItems.length === 0 ? (
           <div className="py-16 text-center bg-white rounded-3xl border border-[#20352b]/10 p-8 space-y-3">
             <ImageIcon size={36} className="mx-auto text-[#c8a36a]" />
-            <h3 className="font-serif text-lg text-[#20352b]">Abhi koi photo add nahi ki gayi hai</h3>
+            <h3 className="font-serif text-lg text-[#20352b]">Abhi koi photo ya video add nahi ki gayi hai</h3>
             <p className="text-xs text-[#77766c] max-w-sm mx-auto">
-              Aap &quot;Upload Photo&quot; button par click karke homestay, rooms ya ghats ki photos website gallery me add kar sakte hain.
+              Aap &quot;Upload Media&quot; button par click karke homestay, rooms ya ghats ki photos/videos website gallery me add kar sakte hain.
             </p>
             <button onClick={handleOpenUpload} className="button button-dark px-4 py-2 text-xs mt-2">
               <Plus size={14} className="inline mr-1" />
-              Upload First Photo
+              Upload Media
             </button>
           </div>
         ) : (
@@ -504,19 +504,18 @@ export default function Gallery() {
         )}
       </div>
 
-      {/* Upload Photo Modal */}
       <Modal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
-        title="Upload Gallery Photo"
-        subtitle="Website ke Gallery section me photo add karein"
+        title="Upload Gallery Media"
+        subtitle="Website ke Gallery section me photo/video add karein"
         maxWidth="md"
       >
         <form onSubmit={handleSubmit} className="space-y-4 text-xs">
           {/* File Picker / Drag & Drop Area */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1.5">
-              Select Photo from Device *
+              Select Media from Device *
             </label>
             <div
               onClick={() => fileInputRef.current?.click()}
@@ -540,10 +539,10 @@ export default function Gallery() {
                   </div>
                   <div>
                     <strong className="text-xs text-[#20352b] block">
-                      Click to choose image file
+                      Click to choose image or video file
                     </strong>
                     <span className="text-[11px] text-[#77766c]">
-                      Supports JPG, PNG, WEBP (Up to 15MB)
+                      Supports JPG, PNG, WEBP, MP4, MOV (Up to 15MB)
                     </span>
                   </div>
                 </>
@@ -561,7 +560,7 @@ export default function Gallery() {
           {/* Or Image URL input */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1">
-              Ya Direct Image URL paste karein
+              Ya Direct Media URL paste karein
             </label>
             <input
               type="url"
@@ -581,7 +580,7 @@ export default function Gallery() {
           {/* Photo Title */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1">
-              Photo Title / Caption *
+              Title / Caption *
             </label>
             <input
               type="text"
@@ -647,15 +646,15 @@ export default function Gallery() {
           setIsEditModalOpen(false);
           setEditingItem(null);
         }}
-        title="Edit Gallery Photo"
-        subtitle="Gallery image ka title, category ya photo update karein"
+        title="Edit Gallery Media"
+        subtitle="Gallery media ka title, category ya file update karein"
         maxWidth="md"
       >
         <form onSubmit={handleUpdateSubmit} className="space-y-4 text-xs">
           {/* Current / New Image Preview */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1.5">
-              Photo Preview & Replacement
+              Media Preview & Replacement
             </label>
             <div
               onClick={() => editFileInputRef.current?.click()}
@@ -676,7 +675,7 @@ export default function Gallery() {
                 <div className="py-4 text-center">
                   <UploadCloud size={24} className="mx-auto text-[#20352b] mb-1" />
                   <span className="text-xs text-[#20352b] font-medium block">
-                    Click to upload replacement image
+                    Click to upload replacement media
                   </span>
                 </div>
               )}
@@ -693,7 +692,7 @@ export default function Gallery() {
           {/* Or Change Image URL */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1">
-              Ya Direct Image URL edit karein
+              Ya Direct Media URL edit karein
             </label>
             <input
               type="url"
@@ -713,12 +712,12 @@ export default function Gallery() {
           {/* Photo Title */}
           <div>
             <label className="block font-semibold uppercase font-mono tracking-wider text-[#20352b] mb-1">
-              Photo Title / Caption *
+              Title / Caption *
             </label>
             <input
               type="text"
               required
-              placeholder="Photo title"
+              placeholder="Media title"
               value={editTitle}
               onChange={(e) => setEditTitle(e.target.value)}
               className="w-full bg-white border border-[#20352b]/20 rounded-xl px-3.5 py-2.5 text-xs text-[#20352b] focus:outline-none focus:border-[#20352b]"
