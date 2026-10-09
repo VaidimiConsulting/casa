@@ -90,17 +90,17 @@ export default function Finance() {
   };
 
   const columns = [
-    { key: "expense_date", label: "Date", render: (val: string) => new Date(val).toLocaleDateString() },
-    { key: "title", label: "Title" },
-    { key: "category", label: "Category" },
-    { key: "amount", label: "Amount", render: (val: number) => `₹${Number(val).toLocaleString()}` },
-    { key: "description", label: "Description" },
+    { key: "expense_date", header: "Date", render: (item: any) => new Date(item.expense_date).toLocaleDateString() },
+    { key: "title", header: "Title" },
+    { key: "category", header: "Category" },
+    { key: "amount", header: "Amount", render: (item: any) => `₹${Number(item.amount).toLocaleString()}` },
+    { key: "description", header: "Description" },
     { 
       key: "id", 
-      label: "Actions", 
-      render: (id: number) => (
+      header: "Actions", 
+      render: (item: any) => (
         <button 
-          onClick={() => handleDeleteExpense(id)} 
+          onClick={() => handleDeleteExpense(item.id)} 
           className="p-1.5 text-red-600 hover:bg-red-50 rounded"
           title="Delete Expense"
         >
@@ -202,7 +202,7 @@ export default function Finance() {
             data={expenses}
             columns={columns}
             searchPlaceholder="Search expenses..."
-            searchKeys={["title", "category"]}
+            searchKey={(item: any) => item.title}
           />
         </div>
       </div>
