@@ -55,7 +55,14 @@ process.on("unhandledRejection", (reason, promise) => {
 
 app.use(
   cors({
-    origin: [FRONTEND_URL, "http://localhost:5173", "http://localhost:3000", "http://localhost:5174"],
+    origin: [
+      FRONTEND_URL,
+      "https://casanesthomestay.in",
+      "https://www.casanesthomestay.in",
+      "http://localhost:5173",
+      "http://localhost:3000",
+      "http://localhost:5174",
+    ],
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
