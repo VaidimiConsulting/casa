@@ -1,8 +1,12 @@
 import bcrypt from "bcryptjs";
 import pool from "./db.js";
+import { initRoomsTable } from "../controllers/roomController.js";
 
 export async function initAdminUser() {
   try {
+    // Ensure all 5 rooms exist in DB as well
+    await initRoomsTable();
+
     // Ensure users table exists
     await pool.query(`
       CREATE TABLE IF NOT EXISTS users (

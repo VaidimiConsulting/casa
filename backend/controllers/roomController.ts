@@ -44,89 +44,104 @@ export const FIXED_ROOM_PRICES: Record<number, number> = {
   3: 3200, // Casa Luna
 };
 
-// Ensure rooms table exists & seed 5 initial homestay rooms if empty
+// Ensure rooms table exists & seed all 5 homestay rooms
 export async function initRoomsTable(): Promise<void> {
   try {
+    // Ensure table exists
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id              INT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        name            VARCHAR(150)  NOT NULL,
+        description     TEXT          DEFAULT NULL,
+        room_type       VARCHAR(80)   DEFAULT NULL,
+        price_per_night DECIMAL(10,2) NOT NULL DEFAULT 0.00,
+        capacity        TINYINT UNSIGNED NOT NULL DEFAULT 2,
+        amenities       TEXT          DEFAULT NULL,
+        image           VARCHAR(500)  DEFAULT NULL,
+        status          ENUM('available', 'unavailable') NOT NULL DEFAULT 'available',
+        created_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at      DATETIME      NOT NULL DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+      ) ENGINE=InnoDB;
+    `);
+
     // Ensure Casa Blanca is removed
     await pool.query("DELETE FROM rooms WHERE name LIKE '%Casa Blanca%' OR id = 5");
 
-    // Ensure all 5 rooms have their exact fixed prices & room numbers in DB
-    await pool.query("UPDATE rooms SET price_per_night = 3500, name = 'Room 101 — Casa Luz' WHERE id = 1 OR name LIKE '%Casa Luz%'");
-    await pool.query("UPDATE rooms SET price_per_night = 4000, name = 'Room 102 — Casa Sereno' WHERE id = 6 OR name LIKE '%Casa Sereno%'");
-    await pool.query("UPDATE rooms SET price_per_night = 3200, name = 'Room 103 — Casa Luna' WHERE id = 3 OR name LIKE '%Casa Luna%'");
-    await pool.query("UPDATE rooms SET price_per_night = 3800, name = 'Room 104 — Casa Amore' WHERE id = 4 OR name LIKE '%Casa Amore%'");
-    await pool.query("UPDATE rooms SET price_per_night = 3500, name = 'Room 105 — Casa Sol' WHERE id = 2 OR name LIKE '%Casa Sol%'");
+    const initialRooms = [
+      {
+        id: 1,
+        name: "Room 101 — Casa Luz",
+        room_type: "House of Light",
+        price_per_night: 3500,
+        capacity: 2,
+        description: "House of Light – Crafted teak king bed, warm ambient spotlights & serene olive drapes.",
+        image: "/images/rooms/casa_luz_master.jpg",
+        amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Artisan Decor"]),
+        status: "available",
+      },
+      {
+        id: 6,
+        name: "Room 102 — Casa Sereno",
+        room_type: "Calm & Peaceful",
+        price_per_night: 4000,
+        capacity: 2,
+        description: "Calm and Peaceful – Stillness & serene comfort with handcrafted teak bed, artisanal ceramic donut vase & pampas accents.",
+        image: "/images/rooms/casa_sereno_master.jpg",
+        amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Artisan Decor"]),
+        status: "available",
+      },
+      {
+        id: 3,
+        name: "Room 103 — Casa Luna",
+        room_type: "Moonlight Room",
+        price_per_night: 3200,
+        capacity: 3,
+        description: "Moonlight Room – Calming sanctuary with rich wooden flooring, handcrafted teak bed, artisan donut vases & soothing sage accents.",
+        image: "/images/rooms/casa_luna_master.jpg",
+        amenities: JSON.stringify(["King Bed + Extra Bed", "Wi-Fi", "AC", "Hot Water", "Hardwood Floor"]),
+        status: "available",
+      },
+      {
+        id: 4,
+        name: "Room 104 — Casa Amore",
+        room_type: "Romantic & Cozy",
+        price_per_night: 3800,
+        capacity: 2,
+        description: "Romantic and Cozy – Crafted for couples with folded elephant towel origami, plush teak king bed, custom wardrobe & warm ambient lighting.",
+        image: "/images/rooms/casa_amore_master.jpg",
+        amenities: JSON.stringify(["Plush King Bed", "Wi-Fi", "AC", "Hot Water", "Romantic Origami"]),
+        status: "available",
+      },
+      {
+        id: 2,
+        name: "Room 105 — Casa Sol",
+        room_type: "Sunshine Room",
+        price_per_night: 3500,
+        capacity: 2,
+        description: "Sunshine Room – Bright morning sunlight, celebratory swan towel origami & warm tropical bohemian vibes.",
+        image: "/images/rooms/casa_sol_master.jpg",
+        amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Swan Origami"]),
+        status: "available",
+      },
+    ];
 
-    const [rows]: any = await pool.query("SELECT COUNT(*) as count FROM rooms");
-    if (rows[0].count === 0) {
-      const initialRooms = [
-        {
-          id: 1,
-          name: "Room 101 — Casa Luz",
-          room_type: "House of Light",
-          price_per_night: 3500,
-          capacity: 2,
-          description: "House of Light – Crafted teak king bed, warm ambient spotlights & serene olive drapes.",
-          image: "/images/rooms/casa_luz_master.jpg",
-          amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Artisan Decor"]),
-          status: "available",
-        },
-        {
-          id: 6,
-          name: "Room 102 — Casa Sereno",
-          room_type: "Calm & Peaceful",
-          price_per_night: 4000,
-          capacity: 2,
-          description: "Calm and Peaceful – Stillness & serene comfort with handcrafted teak bed, artisanal ceramic donut vase & pampas accents.",
-          image: "/images/rooms/casa_sereno_master.jpg",
-          amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Artisan Decor"]),
-          status: "available",
-        },
-        {
-          id: 3,
-          name: "Room 103 — Casa Luna",
-          room_type: "Moonlight Room",
-          price_per_night: 3200,
-          capacity: 3,
-          description: "Moonlight Room – Calming sanctuary with rich wooden flooring, handcrafted teak bed, artisan donut vases & soothing sage accents.",
-          image: "/images/rooms/casa_luna_master.jpg",
-          amenities: JSON.stringify(["King Bed + Extra Bed", "Wi-Fi", "AC", "Hot Water", "Hardwood Floor"]),
-          status: "available",
-        },
-        {
-          id: 4,
-          name: "Room 104 — Casa Amore",
-          room_type: "Romantic & Cozy",
-          price_per_night: 3800,
-          capacity: 2,
-          description: "Romantic and Cozy – Crafted for couples with folded elephant towel origami, plush teak king bed, custom wardrobe & warm ambient lighting.",
-          image: "/images/rooms/casa_amore_master.jpg",
-          amenities: JSON.stringify(["Plush King Bed", "Wi-Fi", "AC", "Hot Water", "Romantic Origami"]),
-          status: "available",
-        },
-        {
-          id: 2,
-          name: "Room 105 — Casa Sol",
-          room_type: "Sunshine Room",
-          price_per_night: 3500,
-          capacity: 2,
-          description: "Sunshine Room – Bright morning sunlight, celebratory swan towel origami & warm tropical bohemian vibes.",
-          image: "/images/rooms/casa_sol_master.jpg",
-          amenities: JSON.stringify(["King Bed", "Wi-Fi", "AC", "Hot Water", "Swan Origami"]),
-          status: "available",
-        },
-      ];
-
-      for (const r of initialRooms) {
-        await pool.query(
-          `INSERT INTO rooms (id, name, room_type, price_per_night, capacity, description, image, amenities, status)
-           VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-           ON DUPLICATE KEY UPDATE name=VALUES(name), image=VALUES(image), price_per_night=VALUES(price_per_night), description=VALUES(description)`,
-          [r.id, r.name, r.room_type, r.price_per_night, r.capacity, r.description, r.image, r.amenities, r.status]
-        );
-      }
-      console.log("🔒 Initial 5 homestay rooms seeded.");
+    for (const r of initialRooms) {
+      await pool.query(
+        `INSERT INTO rooms (id, name, room_type, price_per_night, capacity, description, image, amenities, status)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+         ON DUPLICATE KEY UPDATE 
+           name = VALUES(name),
+           room_type = VALUES(room_type),
+           image = VALUES(image),
+           price_per_night = VALUES(price_per_night),
+           capacity = VALUES(capacity),
+           description = VALUES(description),
+           amenities = VALUES(amenities),
+           status = 'available'`,
+        [r.id, r.name, r.room_type, r.price_per_night, r.capacity, r.description, r.image, r.amenities, r.status]
+      );
     }
+    console.log("🔒 All 5 homestay rooms ensured in database.");
   } catch (error) {
     console.error("Failed to initialize room table:", error);
   }
