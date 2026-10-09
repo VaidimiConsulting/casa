@@ -6,11 +6,13 @@ import {
   toggleCouponStatus,
   deleteCoupon,
   validateCoupon,
+  getActiveCoupons,
 } from "../controllers/couponController.js";
 import { authenticate, requireAdmin } from "../middleware/auth.js";
 
 const router = Router();
 
+router.get("/active", getActiveCoupons);
 router.get("/", authenticate, requireAdmin, getCoupons);
 router.post("/", authenticate, requireAdmin, createCoupon);
 router.post("/validate", validateCoupon);

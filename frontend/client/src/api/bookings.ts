@@ -42,6 +42,7 @@ export interface BookingData {
   children?: number;
   notes?: string;
   payment_method?: string;
+  coupon_code?: string;
 }
 
 export interface BookingResponse {

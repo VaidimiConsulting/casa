@@ -12,6 +12,17 @@ export async function getCoupons(_req: Request, res: Response): Promise<void> {
   }
 }
 
+// GET /api/coupons/active (Public)
+export async function getActiveCoupons(_req: Request, res: Response): Promise<void> {
+  try {
+    const [rows] = await pool.query("SELECT code, description, discount_type, discount_value, min_order_amount FROM coupons WHERE is_active = 1 AND start_date <= CURDATE() AND end_date >= CURDATE() ORDER BY created_at DESC");
+    res.json({ success: true, coupons: rows });
+  } catch (error) {
+    console.error("Get active coupons error:", error);
+    res.status(500).json({ success: false, message: "Internal server error." });
+  }
+}
+
 // POST /api/coupons
 export async function createCoupon(req: Request, res: Response): Promise<void> {
   try {

@@ -20,6 +20,11 @@ export async function fetchCoupons(): Promise<Coupon[]> {
   return response.data.coupons;
 }
 
+export async function fetchActiveCoupons(): Promise<Partial<Coupon>[]> {
+  const response = await api.get<{ success: boolean; coupons: Partial<Coupon>[] }>("/coupons/active");
+  return response.data.coupons;
+}
+
 export async function createCoupon(data: Partial<Coupon>) {
   const response = await api.post("/coupons", data);
   return response.data;

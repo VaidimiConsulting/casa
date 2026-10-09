@@ -62,6 +62,7 @@ export async function createBooking(req: Request, res: Response): Promise<void> 
       children = 0,
       guests,
       notes,
+      coupon_code,
     } = req.body;
 
     const parsedMales = parseInt(males) || 0;
@@ -173,10 +174,58 @@ export async function createBooking(req: Request, res: Response): Promise<void> 
     let grandTotal = 0;
     let firstBookingId = null;
 
-    // Create bookings for each room
+    // Calculate total order amount for coupon validation
+    let orderAmount = 0;
     for (const room of roomsList) {
-      const roomTotal = Number(room.price_per_night) * nights;
-      grandTotal += roomTotal;
+      orderAmount += Number(room.price_per_night) * nights;
+    }
+
+    let totalDiscount = 0;
+    let couponNote = "";
+
+    if (coupon_code) {
+      const [rows] = await pool.query(
+        "SELECT * FROM coupons WHERE code = ? AND is_active = 1 AND start_date <= CURDATE() AND end_date >= CURDATE()",
+        [coupon_code.toUpperCase()]
+      );
+      const coupons = rows as any[];
+      if (coupons.length > 0) {
+        const coupon = coupons[0];
+        if (orderAmount >= Number(coupon.min_order_amount)) {
+          if (coupon.discount_type === "percentage") {
+            totalDiscount = (orderAmount * Number(coupon.discount_value)) / 100;
+            if (coupon.max_discount && totalDiscount > Number(coupon.max_discount)) {
+              totalDiscount = Number(coupon.max_discount);
+            }
+          } else {
+            totalDiscount = Number(coupon.discount_value);
+          }
+          // Increment times_used
+          await pool.query("UPDATE coupons SET times_used = times_used + 1 WHERE id = ?", [coupon.id]);
+          couponNote = `\n[Coupon Applied: ${coupon.code} - ₹${totalDiscount.toFixed(2)} OFF]`;
+        }
+      }
+    }
+
+    let remainingDiscount = totalDiscount;
+
+    // Create bookings for each room
+    for (let i = 0; i < roomsList.length; i++) {
+      const room = roomsList[i];
+      let roomTotal = Number(room.price_per_night) * nights;
+      
+      let roomDiscount = 0;
+      if (i === roomsList.length - 1) {
+        roomDiscount = remainingDiscount;
+      } else {
+        roomDiscount = Math.round((roomTotal / orderAmount) * totalDiscount);
+        remainingDiscount -= roomDiscount;
+      }
+      
+      const finalRoomTotal = Math.max(0, roomTotal - roomDiscount);
+      grandTotal += finalRoomTotal;
+      
+      const finalNotes = ((notes?.trim() || "") + couponNote).trim();
       
       const [result] = await pool.query(
         `INSERT INTO bookings (user_id, room_id, guest_name, guest_email, guest_phone, check_in, check_out, guests, males, females, children, group_id, total_amount, notes)
@@ -194,8 +243,8 @@ export async function createBooking(req: Request, res: Response): Promise<void> 
           parsedFemales,
           parsedChildren,
           groupId,
-          roomTotal,
-          notes?.trim() || null,
+          finalRoomTotal,
+          finalNotes || null,
         ]
       );
       

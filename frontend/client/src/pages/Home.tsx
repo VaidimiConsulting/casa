@@ -1,5 +1,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import api from "@/api/axios";
 import { createBooking, fetchRoomBookedDates, BookedDateRange } from "@/api/bookings";
+import { fetchActiveCoupons } from "@/api/coupons";
 import { sendContactMessage } from "@/api/contact";
 import { getCurrentUser, logout, AuthUser } from "@/api/auth";
 import { fetchRooms, Room as ApiRoom } from "@/api/rooms";
@@ -289,6 +291,11 @@ export default function Home() {
   const [bookingLoading, setBookingLoading] = useState(false);
   const [toast, setToast] = useState("");
   const [guestsVal, setGuestsVal] = useState(1);
+  const [couponCode, setCouponCode] = useState("");
+  const [appliedCoupon, setAppliedCoupon] = useState<{ code: string; discount_type: string; discount_value: number; discount_amount: number } | null>(null);
+  const [couponError, setCouponError] = useState("");
+  const [applyingCoupon, setApplyingCoupon] = useState(false);
+  const [activeCoupons, setActiveCoupons] = useState<any[]>([]);
   const [currentUser, setCurrentUser] = useState<AuthUser | null>(null);
   const [displayRooms, setDisplayRooms] = useState(rooms);
   const [selectedRoomIds, setSelectedRoomIds] = useState<number[]>([1]);
@@ -462,6 +469,13 @@ export default function Home() {
         if (isMounted) setBookedDates(ranges);
       })
       .catch((err) => console.error("Error loading booked dates:", err));
+      
+    fetchActiveCoupons()
+      .then((coupons) => {
+        if (isMounted && coupons) setActiveCoupons(coupons);
+      })
+      .catch((err) => console.error("Error loading coupons:", err));
+      
     return () => {
       isMounted = false;
     };
@@ -594,6 +608,34 @@ export default function Home() {
   const EMAIL_REGEX = /^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}$/;
   const PHONE_REGEX = /^\+?[0-9\s-]{10,15}$/;
 
+  const handleApplyCoupon = async () => {
+    if (!couponCode.trim()) return;
+    setApplyingCoupon(true);
+    setCouponError("");
+    
+    let totalOrderAmount = 0;
+    const nights = Math.max(1, Math.ceil((new Date(checkOutVal || Date.now()).getTime() - new Date(checkInVal || Date.now()).getTime()) / (1000 * 60 * 60 * 24)));
+    for (const id of selectedRoomIds) {
+      const r = displayRooms.find(r => r.id === id);
+      if (r) {
+        totalOrderAmount += parseInt(r.price.replace(/[^\d]/g, ""), 10) * nights;
+      }
+    }
+    
+    try {
+      const response = await api.post("/coupons/validate", { code: couponCode, amount: totalOrderAmount });
+      if (response.data.success) {
+        setAppliedCoupon(response.data.coupon);
+        setCouponError("");
+      }
+    } catch (error: any) {
+      setAppliedCoupon(null);
+      setCouponError(error.response?.data?.message || "Invalid coupon code");
+    } finally {
+      setApplyingCoupon(false);
+    }
+  };
+
   const submitBooking = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!currentUser) {
@@ -653,6 +695,7 @@ export default function Home() {
         check_out: checkOutVal,
         guests: guestsVal,
         room_id: selectedRoomIds, males: 0, females: 0, children: 0, payment_method: paymentMethod,
+        coupon_code: appliedCoupon ? appliedCoupon.code : undefined,
         notes: roomRef.current?.selectedOptions[0]?.text
           ? `Room preference: ${roomRef.current.selectedOptions[0].text}`
           : undefined,
@@ -1693,7 +1736,42 @@ export default function Home() {
 
         <section className="stay-banner"><img src={images.stay} alt="Quiet sitting room overlooking greenery" loading="lazy" /><div className="stay-overlay" /><div className="container stay-content"><div><span className="eyebrow">A little more time for yourself</span><h2>Your peaceful stay<br /><em>awaits.</em></h2></div><button className="button button-light" onClick={() => scrollTo("booking")}>Book your stay<ArrowRight size={15} /></button></div></section>
 
-        <section id="booking" className="booking-section section-pad"><div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Booking Request Placed!</h3><p className="font-bold text-rose-800">Your booking is NOT confirmed yet!</p><p>Your booking will only be confirmed once you make the payment and receive a confirmation message from the Admin. Please call or WhatsApp the owner at <a href="https://wa.me/918400095434" target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline">+91 84000 95434</a> to confirm your reservation.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row" style={{ alignItems: 'flex-start' }}>
+        <section id="booking" className="booking-section section-pad">
+          
+          {activeCoupons.length > 0 && (
+            <div className="container mb-8">
+              <div className="bg-[#f5f0e8] border border-[#c8a36a] rounded-2xl p-4 sm:p-5 flex flex-col sm:flex-row items-center gap-4 justify-between shadow-sm">
+                <div className="flex items-start gap-3">
+                  <div className="bg-[#c8a36a]/20 p-2 rounded-full text-[#c8a36a] shrink-0 mt-0.5">
+                    <Sparkles size={20} />
+                  </div>
+                  <div>
+                    <h3 className="font-serif text-[#20352b] text-lg font-bold">Special Offers For You!</h3>
+                    <ul className="text-sm text-[#4a3512] space-y-1 mt-1">
+                      {activeCoupons.map((c, idx) => (
+                        <li key={idx}>
+                          Use code <strong className="bg-[#20352b] text-white px-1.5 py-0.5 rounded text-xs mx-1 tracking-wider">{c.code}</strong> 
+                          for {c.discount_type === 'percentage' ? `${c.discount_value}% OFF` : `₹${c.discount_value} OFF`} 
+                          {c.min_order_amount > 0 ? ` on bookings above ₹${c.min_order_amount}` : ''}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
+                <button 
+                  onClick={() => {
+                    setCouponCode(activeCoupons[0].code);
+                    handleApplyCoupon();
+                  }}
+                  className="button button-dark whitespace-nowrap text-xs px-4 py-2"
+                >
+                  Apply Code
+                </button>
+              </div>
+            </div>
+          )}
+
+          <div className="container booking-grid"><div className="booking-copy reveal"><span className="eyebrow">Plan your stay</span><h2>Come as you are.<br /><em>Leave feeling lighter.</em></h2><p>Tell us a little about your visit and we’ll help make your time at Casa Nest beautifully easy.</p><div className="contact-actions"><a href="https://wa.me/918400095434" target="_blank" rel="noreferrer"><MessageCircle size={16} /> WhatsApp us</a><a href="tel:+918400095434"><Phone size={15} /> +91 84000 95434</a><a href="tel:+919336941261"><Phone size={15} /> +91 93369 41261</a></div></div><form className="booking-form reveal reveal-delay-2" onSubmit={submitBooking}>{bookingSent ? <div className="booking-success"><CheckCircle2 size={42} /><h3>Booking Request Placed!</h3><p className="font-bold text-rose-800">Your booking is NOT confirmed yet!</p><p>Your booking will only be confirmed once you make the payment and receive a confirmation message from the Admin. Please call or WhatsApp the owner at <a href="https://wa.me/918400095434" target="_blank" rel="noreferrer" className="text-emerald-700 font-bold underline">+91 84000 95434</a> to confirm your reservation.</p><div className="flex gap-2 justify-center mt-3"><a href="/my-bookings" className="button button-dark" style={{ padding: "8px 16px", fontSize: "12px" }}>View My Bookings</a><button type="button" className="text-link" onClick={() => setBookingSent(false)}>Send another enquiry<ArrowRight size={14} /></button></div></div> : <><div className="form-heading"><span>Check availability</span><small>Live room calendar check</small></div><div className="form-row"><label>Your name<input type="text" placeholder="Enter your name" defaultValue={currentUser?.name || ""} ref={guestNameRef} required /></label></div><div className="form-row"><label>Check-in<input type="date" ref={checkInRef} value={checkInVal} min={new Date().toISOString().split("T")[0]} onChange={(e) => setCheckInVal(e.target.value)} required /></label><label>Check-out<input type="date" ref={checkOutRef} value={checkOutVal} min={checkInVal || new Date().toISOString().split("T")[0]} onChange={(e) => setCheckOutVal(e.target.value)} required /></label></div>{datesUnavailable && <div className="p-3 mb-3 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700 flex items-start gap-2"><AlertTriangle size={15} className="shrink-0 mt-0.5 text-red-600" /><div><strong>Selected dates are unavailable!</strong><p className="mt-0.5 text-[11px] text-red-600/90">This room has an active booking during these dates. Please choose different dates or select another room.</p></div></div>}<div className="form-row" style={{ alignItems: 'flex-start' }}>
           <label>
             Room(s)
             <div className="relative w-full" ref={roomDropdownRef}>
@@ -1796,7 +1874,45 @@ export default function Home() {
             </label>
 
           </div>
-        </div><label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
+        </div>
+        
+        <div className="form-row" style={{ display: 'block' }}>
+          <label style={{ display: 'block', marginBottom: '8px' }}>Got a Promo Code?</label>
+          <div style={{ display: 'flex', gap: '8px' }}>
+            <input 
+              type="text" 
+              placeholder="Enter code" 
+              value={couponCode}
+              onChange={(e) => {
+                setCouponCode(e.target.value.toUpperCase());
+                if (appliedCoupon && e.target.value.toUpperCase() !== appliedCoupon.code) {
+                  setAppliedCoupon(null);
+                }
+              }}
+              style={{ textTransform: 'uppercase' }}
+            />
+            <button 
+              type="button" 
+              className="button button-outline" 
+              onClick={handleApplyCoupon}
+              disabled={applyingCoupon || !couponCode.trim() || !checkInVal || !checkOutVal}
+              style={{ padding: '0 16px', height: '44px', whiteSpace: 'nowrap' }}
+            >
+              {applyingCoupon ? "Applying..." : "Apply"}
+            </button>
+          </div>
+          {couponError && <p className="text-red-500 text-xs mt-1">{couponError}</p>}
+          {appliedCoupon && (
+            <p className="text-emerald-600 text-xs mt-1 flex items-center gap-1">
+              <CheckCircle2 size={12} /> Coupon applied! ₹{appliedCoupon.discount_amount.toLocaleString()} will be deducted.
+            </p>
+          )}
+          {(!checkInVal || !checkOutVal) && couponCode.trim() && !appliedCoupon && !couponError && (
+             <p className="text-[#c87a1e] text-xs mt-1">Please select check-in and check-out dates first to validate coupon.</p>
+          )}
+        </div>
+        
+        <label>Your email<input type="email" placeholder="Enter email" defaultValue={currentUser?.email || ""} ref={emailRef} required /></label><button type="submit" className="button button-dark form-submit" disabled={bookingLoading || datesUnavailable}>{bookingLoading ? "Sending…" : datesUnavailable ? "Dates Unavailable — Pick Other Dates" : <>Check availability<ArrowRight size={16} /></>}</button><small className="form-footnote"><Check size={13} /> No advance online payment required • Pay directly at homestay front desk</small></>}</form></div></section>
 
         <section id="contact" className="section-pad section-soft">
           <div className="container">
