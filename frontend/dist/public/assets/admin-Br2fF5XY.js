@@ -1,0 +1,1 @@
+import{n as t}from"./index-BEnRAnSD.js";async function n(){const a=await t.get("/admin/dashboard");return{stats:a.data.stats,bookingStatusMap:a.data.bookingStatusMap,recentBookings:a.data.recentBookings,recentOrders:a.data.recentOrders}}async function r(a="month"){return(await t.get("/admin/reports",{params:{period:a}})).data}export{r as a,n as f};

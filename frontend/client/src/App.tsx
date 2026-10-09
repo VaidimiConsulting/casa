@@ -1,35 +1,46 @@
+import React, { lazy, Suspense } from "react";
 import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
-import NotFound from "@/pages/NotFound";
 import { Route, Switch } from "wouter";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 
-// Customer Pages
+// Home Page loaded directly
 import Home from "./pages/Home";
-import Login from "./pages/Login";
-import Register from "./pages/Register";
-import MyBookings from "./pages/MyBookings";
+
+// Lazy-loaded pages (Code-Splitting for Lightning Fast Initial Load)
+const Login = lazy(() => import("./pages/Login"));
+const Register = lazy(() => import("./pages/Register"));
+const MyBookings = lazy(() => import("./pages/MyBookings"));
+const NotFound = lazy(() => import("@/pages/NotFound"));
 
 // Admin Pages & Guard
-import AdminGuard from "./components/admin/AdminGuard";
-import AdminLogin from "./pages/admin/AdminLogin";
-import Dashboard from "./pages/admin/Dashboard";
-import Rooms from "./pages/admin/Rooms";
-import Bookings from "./pages/admin/Bookings";
-import PatioEvents from "./pages/admin/PatioEvents";
-import Payments from "./pages/admin/Payments";
-import Gallery from "./pages/admin/Gallery";
-import Customers from "./pages/admin/Customers";
-import Reviews from "./pages/admin/Reviews";
-import Messages from "./pages/admin/Messages";
-import Coupons from "./pages/admin/Coupons";
-import Staff from "./pages/admin/Staff";
-import Reports from "./pages/admin/Reports";
-import Settings from "./pages/admin/Settings";
-import CheckIn from "./pages/admin/CheckIn";
-import Services from "./pages/admin/Services";
-import Finance from "./pages/admin/Finance";
+const AdminGuard = lazy(() => import("./components/admin/AdminGuard"));
+const AdminLogin = lazy(() => import("./pages/admin/AdminLogin"));
+const Dashboard = lazy(() => import("./pages/admin/Dashboard"));
+const Rooms = lazy(() => import("./pages/admin/Rooms"));
+const Bookings = lazy(() => import("./pages/admin/Bookings"));
+const PatioEvents = lazy(() => import("./pages/admin/PatioEvents"));
+const Payments = lazy(() => import("./pages/admin/Payments"));
+const Gallery = lazy(() => import("./pages/admin/Gallery"));
+const Customers = lazy(() => import("./pages/admin/Customers"));
+const Reviews = lazy(() => import("./pages/admin/Reviews"));
+const Messages = lazy(() => import("./pages/admin/Messages"));
+const Coupons = lazy(() => import("./pages/admin/Coupons"));
+const Staff = lazy(() => import("./pages/admin/Staff"));
+const Reports = lazy(() => import("./pages/admin/Reports"));
+const Settings = lazy(() => import("./pages/admin/Settings"));
+const CheckIn = lazy(() => import("./pages/admin/CheckIn"));
+const Services = lazy(() => import("./pages/admin/Services"));
+const Finance = lazy(() => import("./pages/admin/Finance"));
+
+function PageLoader() {
+  return (
+    <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center">
+      <div className="w-8 h-8 border-3 border-[#20352b]/20 border-t-[#20352b] rounded-full animate-spin" />
+    </div>
+  );
+}
 
 function Router() {
   return (
@@ -132,7 +143,9 @@ export default function App() {
       <ThemeProvider defaultTheme="light">
         <TooltipProvider>
           <Toaster position="top-right" richColors />
-          <Router />
+          <Suspense fallback={<PageLoader />}>
+            <Router />
+          </Suspense>
         </TooltipProvider>
       </ThemeProvider>
     </ErrorBoundary>

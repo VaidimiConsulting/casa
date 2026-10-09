@@ -211,10 +211,16 @@ function playDoorSound() {
   }
 }
 
-function EntranceOverlay({ active, opening, fading }: { active: boolean; opening: boolean; fading: boolean }) {
+function EntranceOverlay({ active, opening, fading, onDismiss }: { active: boolean; opening: boolean; fading: boolean; onDismiss?: () => void }) {
   if (!active) return null;
   return (
-    <div className={`entrance-overlay ${opening ? "is-opening" : ""} ${fading ? "is-fading" : ""}`} aria-label="Entering Casa Nest" role="dialog">
+    <div 
+      className={`entrance-overlay ${opening ? "is-opening" : ""} ${fading ? "is-fading" : ""} cursor-pointer`} 
+      aria-label="Entering Casa Nest" 
+      role="dialog"
+      onClick={onDismiss}
+      title="Click to enter immediately"
+    >
       <div className="entrance-light" />
       <div className="entrance-copy">
         <img src={logoPath} alt="Casa Nest Homestay" className="mix-blend-multiply" />
@@ -499,12 +505,12 @@ export default function Home() {
     const start = window.setTimeout(() => {
       setOpening(true);
       playDoorSound();
-    }, 2100);
-    const fade = window.setTimeout(() => setFading(true), 3650);
+    }, 500);
+    const fade = window.setTimeout(() => setFading(true), 1000);
     const finish = window.setTimeout(() => {
       setIntroActive(false);
       document.body.classList.remove("intro-locked");
-    }, 4350);
+    }, 1300);
     return () => {
       window.clearTimeout(start);
       window.clearTimeout(fade);
@@ -792,7 +798,15 @@ export default function Home() {
 
   return (
     <div className="site-shell">
-      <EntranceOverlay active={introActive} opening={opening} fading={fading} />
+      <EntranceOverlay 
+        active={introActive} 
+        opening={opening} 
+        fading={fading} 
+        onDismiss={() => {
+          setIntroActive(false);
+          document.body.classList.remove("intro-locked");
+        }} 
+      />
       <header className={`site-nav ${scrolled ? "is-scrolled" : ""} ${navHidden ? "nav-hidden" : ""}`}>
         <div className="container nav-inner">
           <BrandMark />
