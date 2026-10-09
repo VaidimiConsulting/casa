@@ -467,10 +467,20 @@ p { color: inherit; }
   body {
     background: #ffffff !important;
     color: #1a2f23 !important;
+    height: auto !important;
+    min-height: 0 !important;
+    overflow: visible !important;
   }
   body * {
     visibility: hidden;
   }
+  
+  /* Hide the main app root since the modal is now portaled to the body */
+  #root, .toast-message, .lightbox, .site-nav, .site-footer {
+    display: none !important;
+  }
+
+  /* Make sure portaled modals and their content are visible */
   .printable-invoice,
   .printable-invoice *,
   #printable-receipt,
@@ -478,8 +488,9 @@ p { color: inherit; }
     visibility: visible !important;
     color: #1a2f23 !important;
   }
-  .printable-invoice {
-    position: static !important;
+  
+  .printable-invoice, #printable-receipt {
+    position: relative !important;
     width: 100% !important;
     max-width: 100% !important;
     margin: 0 !important;
@@ -488,17 +499,6 @@ p { color: inherit; }
     color: #1a2f23 !important;
     box-shadow: none !important;
     border: none !important;
-    -webkit-print-color-adjust: exact;
-    print-color-adjust: exact;
-  }
-  #printable-receipt {
-    position: static !important;
-    width: 100% !important;
-    max-width: 100% !important;
-    margin: 0 !important;
-    padding: 18px 24px !important;
-    background: #ffffff !important;
-    color: #1a2f23 !important;
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }

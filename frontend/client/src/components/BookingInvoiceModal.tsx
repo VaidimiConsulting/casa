@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Printer, CheckCircle2, Clock, ShieldCheck, MapPin, Phone, Mail, Sparkles, AlertTriangle, FileText, Ban, UserCheck } from "lucide-react";
 import { Booking } from "@/api/bookings";
 
@@ -53,7 +54,7 @@ export default function BookingInvoiceModal({ booking, isOpen, onClose }: Bookin
     window.print();
   };
 
-  return (
+  return createPortal(
     <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:static print:inset-auto print:p-0 print:bg-white print:overflow-visible print:block">
       {/* Container */}
       <div className="relative w-full max-w-3xl bg-[#fbf8f1] rounded-3xl shadow-2xl border border-[#20352b]/15 overflow-hidden my-6 print:m-0 print:border-none print:shadow-none print:w-full print:rounded-none">
@@ -321,54 +322,63 @@ export default function BookingInvoiceModal({ booking, isOpen, onClose }: Bookin
             </div>
 
             <div className="space-y-2 text-[11px] leading-relaxed text-[#4a3512]">
-              {/* Point 1: Advance Money Non-Refundable */}
+              {/* Point 1: Booking Confirmation Call */}
               <div className="flex items-start gap-2">
                 <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">1.</span>
+                <p>
+                  <strong className="text-[#20352b]">Booking Confirmation (बुकिंग कन्फर्मेशन):</strong>{" "}
+                  Please call or WhatsApp the owner at <strong className="text-emerald-700">+91 84000 95434</strong> once to verbally confirm your booking and arrangements. (बुकिंग कन्फर्म करने के लिए कृपया एक बार कॉल या व्हाट्सएप पर बात अवश्य करें।)
+                </p>
+              </div>
+
+              {/* Point 2: Advance Money Non-Refundable */}
+              <div className="flex items-start gap-2">
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">2.</span>
                 <p>
                   <strong className="text-[#20352b]">Advance Payment Non-Refundable (एडवांस राशि वापसी नहीं होगी):</strong>{" "}
                   Advance booking deposit/amount once paid is <span className="underline font-bold text-rose-800">strictly NON-REFUNDABLE at any cost</span> under any circumstances or cancellations.
                 </p>
               </div>
 
-              {/* Point 2: Damage and Breakage of Hotel Property */}
+              {/* Point 3: Property Damage and Breakage */}
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">2.</span>
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">3.</span>
                 <p>
                   <strong className="text-[#20352b]">Property Damage & Breakage Liability (सामान की टूट-फूट का भुगतान):</strong>{" "}
                   Any damage, breakage, loss, or heavy staining of hotel/homestay property, furniture, linen, electrical appliances, bath fittings, or room decor items <span className="underline font-bold text-rose-800">will be charged directly to the guest at 100% replacement/repair cost</span> before departure.
                 </p>
               </div>
 
-              {/* Point 3: Mandatory Government ID */}
+              {/* Point 4: Mandatory Government ID */}
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">3.</span>
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">4.</span>
                 <p>
                   <strong className="text-[#20352b]">Mandatory ID Verification (पहचान पत्र अनिवार्य):</strong>{" "}
                   Original Government-approved Photo ID with valid address (Aadhaar Card, Passport, Voter ID, or Driving License) is mandatory for <strong>ALL staying guests</strong> at the time of check-in. PAN Card is not accepted as address proof.
                 </p>
               </div>
 
-              {/* Point 4: Check-in / Check-out Timings */}
+              {/* Point 5: Check-in / Check-out Timings */}
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">4.</span>
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">5.</span>
                 <p>
                   <strong className="text-[#20352b]">Timings Policy (समय सीमा):</strong>{" "}
                   Standard Check-in is <strong>12:00 PM (Noon)</strong> and Check-out is <strong>11:00 AM</strong>. Early check-in or late check-out is subject to prior confirmation and room availability.
                 </p>
               </div>
 
-              {/* Point 5: Peace, Safety & Cleanliness */}
+              {/* Point 6: Peace, Safety & Cleanliness */}
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">5.</span>
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">6.</span>
                 <p>
                   <strong className="text-[#20352b]">Homestay Decorum & Prohibitions (शांति व स्वच्छता):</strong>{" "}
                   Smoking inside rooms, illegal substances, and loud noise during night hours are strictly prohibited. Guests are requested to preserve the peaceful spiritual ambiance of the homestay.
                 </p>
               </div>
 
-              {/* Point 6: Valuables */}
+              {/* Point 7: Valuables */}
               <div className="flex items-start gap-2">
-                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">6.</span>
+                <span className="font-bold text-[#c87a1e] shrink-0 mt-0.5">7.</span>
                 <p>
                   <strong className="text-[#20352b]">Guest Belongings & Valuables (कीमती सामान):</strong>{" "}
                   Guests are advised to take personal care of their cash, jewellery, and electronic gadgets. Management holds no responsibility for any unattended loss.
@@ -413,7 +423,8 @@ export default function BookingInvoiceModal({ booking, isOpen, onClose }: Bookin
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
 

@@ -1,4 +1,5 @@
 import React from "react";
+import { createPortal } from "react-dom";
 import { X, Printer, ShieldCheck, MapPin, Phone, Mail, FileText } from "lucide-react";
 
 interface EnquirySlipModalProps {
@@ -21,8 +22,8 @@ export default function EnquirySlipModal({ enquiry, isOpen, onClose }: EnquirySl
     window.print();
   };
 
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto">
+  return createPortal(
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-black/70 backdrop-blur-xs overflow-y-auto print:static print:inset-auto print:p-0 print:bg-white print:overflow-visible print:block">
       <div className="relative w-full max-w-2xl bg-[#fbf8f1] rounded-3xl shadow-2xl border border-[#20352b]/15 overflow-hidden my-6 print:m-0 print:border-none print:shadow-none print:w-full print:rounded-none">
         
         <div className="flex items-center justify-between px-5 sm:px-7 py-3.5 bg-[#20352b] text-[#fbf8f1] print:hidden">
@@ -98,6 +99,7 @@ export default function EnquirySlipModal({ enquiry, isOpen, onClose }: EnquirySl
           </div>
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   );
 }
