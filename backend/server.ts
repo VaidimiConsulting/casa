@@ -25,6 +25,7 @@ import { initPatioTable } from "./controllers/patioController.js";
 import { initRoomsTable } from "./controllers/roomController.js";
 import { initPaymentsTable } from "./controllers/paymentController.js";
 import { initFinanceTable } from "./controllers/financeController.js";
+import { initAdminUser } from "./config/initAdmin.js";
 
 import path from "path";
 import { fileURLToPath } from "url";
@@ -99,6 +100,19 @@ app.use("/api/patio", patioRoutes);
 app.use("/api/finance", financeRoutes);
 
 
+// Setup/Reset Admin user endpoint (can be called via browser)
+app.get("/api/setup-admin", async (_req, res) => {
+  const result = await initAdminUser();
+  res.json({
+    ...result,
+    loginDetails: {
+      email: "admin@casanest.com",
+      password: "admin123",
+      loginUrl: "https://casanesthomestay.in/admin/login",
+    },
+  });
+});
+
 // Health check
 app.get("/api/health", (_req, res) => {
   res.json({
@@ -132,6 +146,7 @@ async function startServer() {
     await initFinanceTable();
     await initGalleryTable();
     await initPatioTable();
+    await initAdminUser();
 
     app.listen(PORT, () => {
       console.log(`🏡 Casa Nest API running at http://localhost:${PORT}`);
