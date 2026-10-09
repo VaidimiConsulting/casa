@@ -1,6 +1,6 @@
 import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, ConciergeBell } from "lucide-react";
+import { useLocation, Link } from "wouter";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ConciergeBell, Home } from "lucide-react";
 import { login } from "@/api/auth";
 
 const logoPath = "/logo.png";
@@ -38,16 +38,27 @@ export default function ReceptionLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center p-4 sm:p-6 text-[#20352b] antialiased">
+    <div className="min-h-screen bg-[#f5f0e8] flex flex-col items-center justify-center p-4 sm:p-6 text-[#20352b] antialiased">
+      {/* Top Header Navigation */}
+      <div className="w-full max-w-md flex items-center justify-start mb-4 px-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fbf8f1] border border-[#20352b]/15 text-xs font-semibold text-[#20352b] hover:bg-[#20352b] hover:text-[#fbf8f1] transition-all shadow-sm group"
+        >
+          <Home size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Website</span>
+        </Link>
+      </div>
+
       <div className="w-full max-w-md bg-[#fbf8f1] border border-[#20352b]/15 rounded-3xl p-8 sm:p-10 shadow-xl shadow-[#20352b]/5 relative overflow-hidden">
         {/* Top Accent — gold for reception */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#c8a36a] via-[#e8c48a] to-[#c8a36a]" />
 
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-block mb-4">
+          <Link href="/" className="inline-block mb-4">
             <img src={logoPath} alt="Casa Nest" className="h-24 mx-auto object-contain mix-blend-multiply" />
-          </a>
+          </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#c8a36a]/15 border border-[#c8a36a]/30 text-[#c8a36a] text-[10px] font-mono uppercase tracking-widest font-semibold mb-3">
             <ConciergeBell size={12} />
             <span>Reception Panel</span>
@@ -130,18 +141,19 @@ export default function ReceptionLogin() {
         </form>
 
         <div className="mt-8 pt-6 border-t border-[#20352b]/10 text-center flex flex-col gap-2">
-          <a
+          <Link
             href="/admin/login"
             className="text-xs text-[#77766c] hover:text-[#20352b] transition-colors"
           >
             Admin? → Sign in to Admin Panel
-          </a>
-          <a
+          </Link>
+          <Link
             href="/"
-            className="text-xs text-[#77766c] hover:text-[#20352b] transition-colors"
+            className="text-xs text-[#77766c] hover:text-[#20352b] transition-colors inline-flex items-center justify-center gap-1"
           >
-            ← Return to Casa Nest Website
-          </a>
+            <Home size={12} />
+            <span>Return to Casa Nest Website</span>
+          </Link>
         </div>
       </div>
     </div>

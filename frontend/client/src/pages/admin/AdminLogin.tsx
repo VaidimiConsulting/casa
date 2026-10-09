@@ -1,7 +1,7 @@
-import React, { useState } from "react";
-import { useLocation } from "wouter";
-import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck } from "lucide-react";
-import { login } from "@/api/auth";
+import React, { useState, useEffect } from "react";
+import { useLocation, Link } from "wouter";
+import { ArrowRight, Eye, EyeOff, Lock, Mail, ShieldCheck, Home, LayoutDashboard } from "lucide-react";
+import { login, getCurrentUser } from "@/api/auth";
 
 const logoPath = "/logo.png";
 
@@ -12,6 +12,14 @@ export default function AdminLogin() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [currentUser, setCurrentUser] = useState<any>(null);
+
+  useEffect(() => {
+    const user = getCurrentUser();
+    if (user) {
+      setCurrentUser(user);
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,16 +42,37 @@ export default function AdminLogin() {
   };
 
   return (
-    <div className="min-h-screen bg-[#f5f0e8] flex items-center justify-center p-4 sm:p-6 text-[#20352b] antialiased">
+    <div className="min-h-screen bg-[#f5f0e8] flex flex-col items-center justify-center p-4 sm:p-6 text-[#20352b] antialiased relative">
+      {/* Top Header Navigation */}
+      <div className="w-full max-w-md flex items-center justify-between mb-4 px-2">
+        <Link
+          href="/"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#fbf8f1] border border-[#20352b]/15 text-xs font-semibold text-[#20352b] hover:bg-[#20352b] hover:text-[#fbf8f1] transition-all shadow-sm group"
+        >
+          <Home size={14} className="group-hover:-translate-x-0.5 transition-transform" />
+          <span>Back to Website</span>
+        </Link>
+
+        {currentUser?.role === "admin" && (
+          <Link
+            href="/admin/dashboard"
+            className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full bg-[#20352b] text-[#fbf8f1] text-xs font-semibold hover:bg-[#2c473b] transition-all shadow-sm"
+          >
+            <LayoutDashboard size={14} />
+            <span>Go to Dashboard</span>
+          </Link>
+        )}
+      </div>
+
       <div className="w-full max-w-md bg-[#fbf8f1] border border-[#20352b]/15 rounded-3xl p-8 sm:p-10 shadow-xl shadow-[#20352b]/5 relative overflow-hidden">
         {/* Decorative Top Accent */}
         <div className="absolute top-0 left-0 right-0 h-2 bg-gradient-to-r from-[#20352b] via-[#c8a36a] to-[#20352b]" />
 
         {/* Logo and Header */}
         <div className="text-center mb-8">
-          <a href="/" className="inline-block mb-4">
-            <img src={logoPath} alt="Casa Nest" className="h-24 mx-auto object-contain mix-blend-multiply" />
-          </a>
+          <Link href="/" className="inline-block mb-4 group" title="Return to Casa Nest Homepage">
+            <img src={logoPath} alt="Casa Nest" className="h-24 mx-auto object-contain mix-blend-multiply group-hover:scale-105 transition-transform" />
+          </Link>
           <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-[#f5f0e8] border border-[#20352b]/10 text-[#c8a36a] text-[10px] font-mono uppercase tracking-widest font-semibold mb-2">
             <ShieldCheck size={12} />
             <span>Admin Portal</span>
@@ -55,6 +84,16 @@ export default function AdminLogin() {
             Manage Casa Nest homestay, rooms, reservations & guest stays
           </p>
         </div>
+
+        {/* Already logged in helper */}
+        {currentUser?.role === "admin" && (
+          <div className="mb-6 p-3.5 rounded-2xl bg-[#20352b]/10 border border-[#20352b]/20 flex items-center justify-between text-xs">
+            <span className="font-medium text-[#20352b]">Already logged in as <strong>{currentUser.name}</strong></span>
+            <Link href="/admin/dashboard" className="font-bold underline text-[#20352b] hover:text-[#c8a36a] ml-2">
+              Dashboard →
+            </Link>
+          </div>
+        )}
 
         {/* Error Alert */}
         {error && (
@@ -124,13 +163,15 @@ export default function AdminLogin() {
           </button>
         </form>
 
-        <div className="mt-8 pt-6 border-t border-[#20352b]/10 text-center">
-          <a
+        {/* Footer Navigation */}
+        <div className="mt-8 pt-6 border-t border-[#20352b]/10 flex flex-col items-center gap-3">
+          <Link
             href="/"
-            className="text-xs text-[#77766c] hover:text-[#20352b] transition-colors"
+            className="inline-flex items-center gap-1.5 text-xs font-medium text-[#20352b] hover:text-[#c8a36a] transition-colors"
           >
-            ← Return to Casa Nest Homestay website
-          </a>
+            <Home size={13} />
+            <span>← Return to Casa Nest Homestay website</span>
+          </Link>
         </div>
       </div>
     </div>
