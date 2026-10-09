@@ -3,11 +3,11 @@
   "version": "1.0.0",
   "description": "Casa Nest Homestay – Node.js + Express + MySQL backend",
   "type": "module",
-  "main": "server.ts",
+  "main": "dist/server.js",
   "scripts": {
     "dev": "npx tsx watch server.ts",
-    "start": "npx tsx server.ts",
-    "build": "tsc --noEmit"
+    "start": "node dist/server.js",
+    "build": "tsc"
   },
   "dependencies": {
     "bcryptjs": "^2.4.3",
