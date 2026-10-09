@@ -37,6 +37,19 @@ const PORT = process.env.PORT || 5000;
 const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
 
 // ============================================================
+// Process Crash Protections
+// ============================================================
+process.on("uncaughtException", (err) => {
+  console.error("CRITICAL: Uncaught Exception occurred:", err);
+  // Optional: Add logging to file or monitoring system here
+});
+
+process.on("unhandledRejection", (reason, promise) => {
+  console.error("CRITICAL: Unhandled Rejection at:", promise, "reason:", reason);
+  // Optional: Add logging to file or monitoring system here
+});
+
+// ============================================================
 // Middleware
 // ============================================================
 
