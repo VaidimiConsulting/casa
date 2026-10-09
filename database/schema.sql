@@ -4,8 +4,7 @@
 -- Run this in phpMyAdmin or MySQL CLI
 -- ============================================================
 
-CREATE DATABASE IF NOT EXISTS casa_nest CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;
-USE casa_nest;
+
 
 -- ============================================================
 -- TABLE: users
