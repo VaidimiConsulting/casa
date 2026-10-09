@@ -35,19 +35,32 @@ const __dirname = path.dirname(__filename);
 
 const app = express();
 const PORT = process.env.PORT || 5000;
-const FRONTEND_URL = process.env.FRONTEND_URL || "http://localhost:5173";
+const FRONTEND_URL = process.env.FRONTEND_URL || "https://casanesthomestay.in";
+
+// Trust proxy for reverse proxies (Hostinger, NGINX, Cloudflare)
+app.set("trust proxy", 1);
 
 // ============================================================
 // Process Crash Protections
 // ============================================================
 process.on("uncaughtException", (err) => {
   console.error("CRITICAL: Uncaught Exception occurred:", err);
-  // Optional: Add logging to file or monitoring system here
 });
 
 process.on("unhandledRejection", (reason, promise) => {
   console.error("CRITICAL: Unhandled Rejection at:", promise, "reason:", reason);
-  // Optional: Add logging to file or monitoring system here
+});
+
+// ============================================================
+// HTTPS Redirect Middleware (301 Permanent in Production)
+// ============================================================
+app.use((req, res, next) => {
+  const isProd = process.env.NODE_ENV === "production" || !req.hostname.includes("localhost");
+  const isHttp = !req.secure && req.get("x-forwarded-proto") !== "https";
+  if (isProd && isHttp && req.hostname !== "localhost" && req.hostname !== "127.0.0.1") {
+    return res.redirect(301, `https://${req.hostname}${req.originalUrl}`);
+  }
+  next();
 });
 
 // ============================================================

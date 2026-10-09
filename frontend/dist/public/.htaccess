@@ -1,9 +1,29 @@
 <IfModule mod_rewrite.c>
   RewriteEngine On
   RewriteBase /
+
+  # 1. Force HTTPS 301 Permanent Redirect
+  RewriteCond %{HTTPS} off
+  RewriteCond %{HTTP:X-Forwarded-Proto} !https
+  RewriteRule ^(.*)$ https://%{HTTP_HOST}/$1 [R=301,L]
+
+  # 2. Redirect www to non-www (301 Permanent)
+  RewriteCond %{HTTP_HOST} ^www\.casanesthomestay\.in$ [NC]
+  RewriteRule ^(.*)$ https://casanesthomestay.in/$1 [R=301,L]
+
+  # 3. SPA Front-Controller (React Router fallback to index.html)
   RewriteRule ^index\.html$ - [L]
   RewriteCond %{REQUEST_FILENAME} !-f
   RewriteCond %{REQUEST_FILENAME} !-d
   RewriteCond %{REQUEST_FILENAME} !-l
   RewriteRule . /index.html [L]
+</IfModule>
+
+# 4. Security & Mixed Content Fix Headers
+<IfModule mod_headers.c>
+  Header always set Strict-Transport-Security "max-age=31536000; includeSubDomains; preload" env=HTTPS
+  Header set X-Content-Type-Options "nosniff"
+  Header set X-Frame-Options "SAMEORIGIN"
+  Header set Referrer-Policy "strict-origin-when-cross-origin"
+  Header set Content-Security-Policy "upgrade-insecure-requests;"
 </IfModule>
