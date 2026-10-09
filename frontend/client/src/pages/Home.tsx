@@ -883,7 +883,7 @@ export default function Home() {
 
         <section id="about" className="about-section section-pad">
           <div className="container about-grid">
-            <div className="about-copy reveal"><span className="eyebrow">About Casa Nest</span><h2>A home away<br />from home.</h2><p>Casa Nest is more than just a place to stay — it’s a feeling. A beautiful blend of Kerala’s easy warmth, European elegance and the timeless culture of Kashi.</p><p>Thoughtfully designed spaces, warm hospitality, and a peaceful environment make every stay truly special.</p><button className="button button-dark" onClick={() => setToast("We are a small home with a big heart — more stories coming soon.")}>Our Story<ArrowRight size={15} /></button></div>
+            <div className="about-copy reveal"><span className="eyebrow">About Casa Nest</span><h2>A home away<br />from home.</h2><p>Casa Nest is more than just a place to stay — it’s a feeling. A beautiful blend of Kerala’s easy warmth, European elegance and the timeless culture of Kashi.</p><p>Thoughtfully designed spaces, warm hospitality, and a peaceful environment make every stay truly special.</p></div>
             <div className="about-media reveal reveal-delay-2"><img src={images.about} alt="Casa Nest indoor lounge with plants and arched doorway" loading="lazy" /><div className="scribble scribble-about">Same city.<br /><em>Different</em><br />vibe.</div></div>
           </div>
         </section>
