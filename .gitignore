@@ -15,8 +15,8 @@ jspm_packages/
 !**/.env.*.example
 
 # Build and production outputs
-dist/
-**/dist/
+# dist/
+# **/dist/
 build/
 **/build/
 *.dist

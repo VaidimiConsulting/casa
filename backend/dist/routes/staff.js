@@ -1,0 +1,10 @@
+import { Router } from "express";
+import { getStaff, createStaff, updateStaff, toggleStaffStatus, deleteStaff, } from "../controllers/staffController.js";
+import { authenticate, requireAdmin } from "../middleware/auth.js";
+const router = Router();
+router.get("/", authenticate, requireAdmin, getStaff);
+router.post("/", authenticate, requireAdmin, createStaff);
+router.put("/:id", authenticate, requireAdmin, updateStaff);
+router.put("/:id/status", authenticate, requireAdmin, toggleStaffStatus);
+router.delete("/:id", authenticate, requireAdmin, deleteStaff);
+export default router;

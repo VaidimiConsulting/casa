@@ -11,6 +11,7 @@ async function clearDummyData() {
 
     const tablesToClear = [
       "bookings",
+      "patio_bookings",
       "payments",
       "food_orders",
       "food_order_items",
@@ -24,12 +25,13 @@ async function clearDummyData() {
       try {
         await conn.query(`TRUNCATE TABLE ${table};`);
         console.log(`✅ Cleared ${table}`);
-      } catch (err: any) {
+      } catch (e) {
+        const err = e as any;
         // Table might not exist yet, that's fine
         if (err.code === 'ER_NO_SUCH_TABLE') {
           console.log(`⏭️ Skipped ${table} (Does not exist)`);
         } else {
-          console.log(`❌ Error clearing ${table}:`, err.message);
+          console.log(`❌ Error clearing ${table}:`, err.message || err);
         }
       }
     }
@@ -38,17 +40,17 @@ async function clearDummyData() {
     try {
       const [result] = await conn.query("DELETE FROM users WHERE role != 'admin'");
       console.log(`✅ Cleared non-admin users. Rows affected: ${(result as any).affectedRows}`);
-    } catch (err: any) {
-      console.log(`❌ Error clearing users:`, err.message);
+    } catch (e) {
+      const err = e as any;
+      console.log(`❌ Error clearing users:`, err.message || err);
     }
-
-    // Re-enable foreign key checks
-    await conn.query("SET FOREIGN_KEY_CHECKS = 1;");
     
     console.log("🎉 All dummy transaction data has been cleared!");
   } catch (error) {
     console.error("Error clearing data:", error);
   } finally {
+    // Re-enable foreign key checks safely in finally block
+    await conn.query("SET FOREIGN_KEY_CHECKS = 1;");
     conn.release();
     process.exit(0);
   }
